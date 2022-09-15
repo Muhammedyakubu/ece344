@@ -8,15 +8,31 @@ struct wc {
 	/* you can define this struct to have whatever fields you want. */
 };
 
+int hash_func(char *word) {
+	
+}
+
+int wc_insert(struct wc *, char *word){
+
+}
+
 struct wc *
 wc_init(char *word_array, long size)
-{
+{	
+	// initialize hash table
 	struct wc *wc;
 
 	wc = (struct wc *)malloc(sizeof(struct wc));
 	assert(wc);
 
-	TBD();
+	// parse words and insert into hash table
+    char* token;
+    char* rest = word_array;
+ 
+    while ((token = strtok_r(rest, " ", &rest)))
+        wc_insert(token);
+
+	// TBD();
 
 	return wc;
 }
