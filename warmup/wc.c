@@ -50,11 +50,12 @@ wc_init(char *word_array, long size)
 	assert(wc);
 
 	// parse words and insert into hash table
-	char *wa_copy = "Hi";
-	wa_copy = strcpy(wa_copy, word_array);
-    char* token = strtok(wa_copy, " ");
+	char *wa_copy, *token;
+	wa_copy = strdup(word_array);
+
+	printf("boutta start parsing");
  
-    while (token != NULL){
+	while( (token = strsep(&wa_copy," \n")) != NULL ) {
 		printf("token is: %s", token);
 		//=>Check if word exists in hashtable
 
@@ -76,7 +77,6 @@ wc_init(char *word_array, long size)
 			wc->array[k] = entry;
 		}
 
-		token = strtok(NULL, " ");
 	}
 
 	return wc;
@@ -100,4 +100,4 @@ wc_destroy(struct wc *wc)
 {
 	TBD();
 	free(wc);
-};
+};;
