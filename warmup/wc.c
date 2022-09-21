@@ -51,9 +51,12 @@ wc_init(char *word_array, long size)
 
 	// parse words and insert into hash table
 	char *wa_copy, *token;
+
+	printf("before strdup");
+
 	wa_copy = strdup(word_array);
 
-	printf("boutta start parsing");
+	printf("after, boutta start parsing");
  
 	while( (token = strsep(&wa_copy," \n")) != NULL ) {
 		printf("token is: %s", token);
