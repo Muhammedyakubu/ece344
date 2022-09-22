@@ -49,8 +49,13 @@ copy_file(char *dst, char *src) {
 	// close src
 	close(fd_src);
 
-	// give all users access to the new file
-	chmod(dst, 0777); // use 7777? or call stat and use srcdir's?
+	// copy permissions from src file to the new file
+	struct stat src_st = {0};
+	if (stat(src, &src_st) == -1) {
+		syserror(stat, src);
+	}
+
+	chmod(dst, src_st.st_mode);
 	// close the new file
 	close(fd_dst);
 
@@ -70,14 +75,9 @@ copy_dir(char *dstdir, char *srcdir) {
 		syserror(stat, srcdir);
 	}
 
-	// mkdir dstdir with the same mode as the srcdir
-	DIR *dst;
-	if(mkdir(dstdir, src_st.st_mode) < 0) {
+	// mkdir dstdir with all permissions, and change it at the end 
+	if(mkdir(dstdir, 0700) < 0) {
 		syserror(mkdir, dstdir);
-	}
-	// if no error, then open the newly created dstdir
-	if((dst = opendir(dstdir)) == NULL) {
-		syserror(opendir, dstdir);
 	}
 
 
@@ -91,7 +91,6 @@ copy_dir(char *dstdir, char *srcdir) {
 			continue;
 		}
 
-		
 		// construct the linux path for each entry in the srcdir
 		char entry_dstdir[256]; 
 		char entry_srcdir[256];
@@ -132,7 +131,8 @@ copy_dir(char *dstdir, char *srcdir) {
 
 	// closedir both dir 
 	closedir(src);
-	closedir(dst);
+	// set destination to the same mode as the srcdir
+	chmod(dstdir, src_st.st_mode);
 
 	return 0;
 }
@@ -148,7 +148,7 @@ main(int argc, char *argv[])
 	char *srcdir = argv[1];
 	char *dstdir = argv[2];
 
-	printf("src is:%s and dst is:%s\n", srcdir, dstdir);
+	// printf("src is:%s and dst is:%s\n", srcdir, dstdir);
 
 	//	check if input is file or directory
 	struct stat src_st = {0};

@@ -40,9 +40,11 @@ Node * linear_search(Node *head, char *word){
 struct wc *
 wc_init(char *word_array, long size)
 {	
+	printf("is it here?");
 	// initialize hash table
 	struct wc *wc;
 	int ht_size = size/2;
+
 
 
 	wc = (struct wc *)malloc(sizeof(struct wc));
