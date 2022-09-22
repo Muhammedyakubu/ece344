@@ -44,7 +44,6 @@ main(int argc, char *argv[])
 	close(fd);
 
 	/* note that the array addr is read only, and cannot be modified. */
-	printf("what is actually guanning");
 	wc = wc_init(addr, sb.st_size);
 	/* unmap the word array so it is no longer accessible */
 	munmap(addr, sb.st_size);

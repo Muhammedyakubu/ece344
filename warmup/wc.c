@@ -30,7 +30,7 @@ int hash_func(const char *word, int size) {
 
 Node * linear_search(Node *head, char *word){
 	while (head) {
-		if (strcmp(word, head->word))
+		if (strcmp(word, head->word) == 0)
 			return head;
 		head = head->next;
 	}
@@ -40,29 +40,26 @@ Node * linear_search(Node *head, char *word){
 struct wc *
 wc_init(char *word_array, long size)
 {	
-	printf("is it here?");
 	// initialize hash table
 	struct wc *wc;
 	int ht_size = size/2;
 
 
-
 	wc = (struct wc *)malloc(sizeof(struct wc));
-	wc->array = (Node **)malloc(sizeof(Node) * ht_size);
+	wc->size = ht_size;
+	wc->array = (Node **)calloc(sizeof(Node), ht_size);
 	assert(wc);
 
 	// parse words and insert into hash table
 	char *wa_copy, *token;
 
-	printf("before strdup");
-
 	wa_copy = strdup(word_array);
 
-	printf("after, boutta start parsing");
- 
 	while( (token = strsep(&wa_copy," \n")) != NULL ) {
-		printf("token is: %s", token);
 		//=>Check if word exists in hashtable
+
+		// if the word is empty, ignore
+		if(strlen(token) == 0) continue;
 
 		int k = hash_func(token, ht_size);
 		// get the linked list at index k of the hash table
@@ -75,7 +72,7 @@ wc_init(char *word_array, long size)
 			// initialize the new node
 			Node *entry = malloc(sizeof(Node));
 			entry->count = 1;
-			strcpy(entry->word, token);
+			entry->word = strdup(token);
 			entry->next = head;
 
 			// insert entry at the head of wc[k]
@@ -95,14 +92,34 @@ wc_output(struct wc *wc)
 
 		while(ptr) {
 			printf("%s:%d\n", ptr->word, ptr->count);
+			ptr = ptr->next;
 		}
 	}
 	
 }
 
 void
+list_destroy(Node *head) {
+	if(head == NULL) return;
+	if(head->next == NULL) {
+		free(head->word);
+		free(head);
+		return;
+	}
+	list_destroy(head->next);
+	free(head->word);
+	free(head);
+	return;
+}
+
+void
 wc_destroy(struct wc *wc)
 {
-	TBD();
+	// loop through the entire array
+	for(int i  = 0; i < wc->size; ++i) {
+		// free each node
+		list_destroy(wc->array[i]);
+	}
+
 	free(wc);
 };;
