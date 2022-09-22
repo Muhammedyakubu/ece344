@@ -1,0 +1,99 @@
+Running tests for Lab 1
+Output being sent to tester.log, tester.out
+Running: /cad2/ece344f/tester/scripts/lab1-01-warmup.py -v
+warmup test
+STARTING PROGRAM: ./hello
+EXPECTING: ^Hello world
+
+ERROR: EOF: not found: ^Hello world
+
+STARTING PROGRAM: ./words how many words
+EXPECTING: ^how
+
+FOUND: how
+
+ADDING MARK: 1, CURRENT MARK: 1
+EXPECTING: ^many
+
+FOUND: many
+
+ADDING MARK: 1, CURRENT MARK: 2
+EXPECTING: ^words
+
+FOUND: words
+
+ADDING MARK: 1, CURRENT MARK: 3
+STARTING PROGRAM: ./fact 9
+EXPECTING: ^362880
+
+FOUND: 362880
+
+ADDING MARK: 1, CURRENT MARK: 4
+STARTING PROGRAM: ./fact 12
+EXPECTING: ^479001600
+
+FOUND: 479001600
+
+ADDING MARK: 1, CURRENT MARK: 5
+STARTING PROGRAM: ./fact 0
+EXPECTING: ^Huh\?
+
+FOUND: Huh?
+
+ADDING MARK: 1, CURRENT MARK: 6
+STARTING PROGRAM: ./fact hello
+EXPECTING: ^Huh\?
+
+FOUND: Huh?
+
+ADDING MARK: 1, CURRENT MARK: 7
+STARTING PROGRAM: ./fact 20
+EXPECTING: ^Overflow
+
+FOUND: Overflow
+
+ADDING MARK: 1, CURRENT MARK: 8
+STARTING PROGRAM: ./fact 1.2
+EXPECTING: ^Huh\?
+
+FOUND: Huh?
+
+ADDING MARK: 1, CURRENT MARK: 9
+STARTING PROGRAM: ./test_point
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 2, CURRENT MARK: 11
+STARTING PROGRAM: ./run_small_test_wc
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 10, CURRENT MARK: 21
+STARTING PROGRAM: ./run_big_test_wc
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 10, CURRENT MARK: 31
+STARTING PROGRAM: ./test_cpr
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 1, CURRENT MARK: 32
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 5, CURRENT MARK: 37
+EXPECTING: ^OK
+
+FOUND: OK
+
+ADDING MARK: 2, CURRENT MARK: 39
+Mark for warmup test is 39 out of 40
+FAIL
+
+You have received 39 marks out of a total of 40 marks.

@@ -55,7 +55,7 @@ wc_init(char *word_array, long size)
 
 	wa_copy = strdup(word_array);
 
-	while( (token = strsep(&wa_copy," \n")) != NULL ) {
+	while( (token = strsep(&wa_copy," \n\r\t\v\f")) != NULL ) {
 		//=>Check if word exists in hashtable
 
 		// if the word is empty, ignore

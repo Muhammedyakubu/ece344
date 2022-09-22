@@ -1,0 +1,7 @@
+#!/bin/bash
+
+test_wc /cad2/ece344f/src/wc-big.txt > wcbig.out
+sort wcbig.out > wcbigo.out
+diff wc-big.res wcbigo.out > wc_output
+echo "Done... opening output"
+code -a wc_output
