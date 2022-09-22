@@ -47,7 +47,8 @@ wc_init(char *word_array, long size)
 
 	wc = (struct wc *)malloc(sizeof(struct wc));
 	wc->size = ht_size;
-	wc->array = (Node **)calloc(sizeof(Node), ht_size);
+	// wc->array = (Node **)calloc(ht_size, sizeof(Node));
+	wc->array = (Node **)calloc(ht_size, sizeof(Node *));
 	assert(wc);
 
 	// parse words and insert into hash table
