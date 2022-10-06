@@ -40,7 +40,8 @@ typedef struct queue {
 /* GLOBALS */
 
 Tid t_running;	// houses the currently running thread for quick access
-Queue ready_q = {NULL, NULL, 0};
+Queue ready_queue = {NULL, NULL, 0};
+Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
 /* HELPERS */
@@ -57,6 +58,51 @@ void q_add(Queue *q, Tid id);
 void t_clean_dead_threads();
 // checks if a thread id is valid
 inline int t_valid(Tid id) {return (id < 0 || id > THREAD_MAX_THREADS);}
+
+/* IMPLEMENTING HELPERS */
+Tid q_pop(Queue *q){
+	if(!q->head) return THREAD_NONE;
+	Node *old_head = q->head;
+	q->head = q->head->next;
+	if(q->head == NULL) {
+		q->tail = NULL;
+	}
+	Tid ret = old_head->id;
+	free(old_head);
+	return ret;
+	// could refactor this to use q_remove
+}
+
+int q_remove(Queue *q, Tid id){
+	Node *cur = q->head;
+	Node *prev = NULL;
+	while(cur){
+		if(cur->id == id) break;
+		prev = cur;
+		cur = cur->next;
+	}
+	if(cur == NULL) return 0;	// we didn't find Tid in q
+	if(cur == q->tail) q->tail = prev;	// if we're gonna remove the tail then move it one back
+
+	prev->next = cur->next;
+	return 1;
+	// finish this later lol. we don't need this rn
+}
+
+void q_add(Queue *q, Tid id){
+	if(q->tail) {
+		Node *new = (Node *)malloc(sizeof(Node));
+		new->id = id;
+		new->next = NULL;
+		q->tail->next = new;
+		q->tail = new;
+	} else {	// means the q is empty
+		q->head = q->tail = (Node *)malloc(sizeof(Node));
+		q->head->id = id;
+		q->head->next = NULL;
+	}
+}
+
 
 /* THREAD LIBRARY FUNCTIONS */
 
@@ -96,24 +142,53 @@ thread_stub(void (*thread_main)(void *), void *arg)
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+	// check that we can make more threads
+	Tid tid = THREAD_MAX_THREADS;
+	for(int i = 0; i < THREAD_MAX_THREADS; ++i) {
+		if (THREADS[i] == NULL || THREADS[i]->state == DEAD) {
+			tid = i;
+			break;
+		}
+	}
+
+	// if tid was not reassigned that means that we can't make more threads
+	if (tid == THREAD_MAX_THREADS) return THREAD_NOMORE;
+
 	// create the thread:
-	// 	allocate stack pointer, 
-	// 	set program counter
-	// 	call fn with pargs 
+	Thread *t = (Thread *)malloc(sizeof(Thread));
+	void *stack = malloc(sizeof(THREAD_MIN_STACK));
+
+	// 	allocate stack space 
+	if (!t || !stack) {
+		return THREAD_NOMEMORY;	
+	}
+
+	THREADS[tid] = t;
+
+	t->id = tid;
+	t->state = READY;
+	t->stack_base = stack;
+	t->setcontext_called = 0;
+	assert(getcontext(&t->context) == 0);
 	
+	// 	set rip, rsp, rsi & rdi GREGS
+	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) thread_stub;
+	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
+	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
+	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (
+		t->stack_base + THREAD_MIN_STACK - 8 - (greg_t)stack%16
+		); // make sure sp is aligned to 16 bits
 
 	// add new thread to ready queue
-
-	// return tid
-
-	TBD();
-	return THREAD_FAILED;
+	q_add(ready_q, t->id);
+	return t->id;
 }
 
 Tid
 thread_yield(Tid want_tid)
 {
 	// save the state of the running thread
+
 	// add the current running queue to the end of the ready_q
 	// context switch to thread want_tid
 	// return running thread tid
