@@ -75,6 +75,16 @@ Tid q_pop(Queue *q){
 }
 
 int q_remove(Queue *q, Tid id){
+	if(q->head == NULL) return 0;
+	// if only one node 
+	if(q->head->next == NULL) {
+		if(q->head->id != id) return 0;
+
+		free(q->head);
+		q->head = q->tail = NULL;
+		return 1;
+	}
+
 	Node *cur = q->head;
 	Node *prev = NULL;
 	while(cur){
@@ -82,12 +92,27 @@ int q_remove(Queue *q, Tid id){
 		prev = cur;
 		cur = cur->next;
 	}
+
 	if(cur == NULL) return 0;	// we didn't find Tid in q
-	if(cur == q->tail) q->tail = prev;	// if we're gonna remove the tail then move it one back
+
+	// if the wanted node is the first node
+	if(cur == q->head && prev == NULL){
+		q->head = q->head->next;
+		free(cur);
+		return 1;
+	}
+
+	// if the wanted node is the last node
+	if(cur == q->tail) {
+		q->tail = prev; // if we're gonna remove the tail then move it one back
+		q->tail->next = NULL; 
+		free(cur);
+		return 1;
+	}
 
 	prev->next = cur->next;
+	free(cur);
 	return 1;
-	// finish this later lol. we don't need this rn
 }
 
 void q_add(Queue *q, Tid id){
@@ -175,7 +200,7 @@ thread_create(void (*fn) (void *), void *parg)
 	assert(getcontext(&t->context) == 0);
 	
 	// 	set rip, rsp, rsi & rdi GREGS
-	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) thread_stub;
+	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_stub;
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
 	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (
