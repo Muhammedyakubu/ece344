@@ -57,7 +57,7 @@ void q_add(Queue *q, Tid id);
 // free space for dead/exited threads
 void t_clean_dead_threads();
 // checks if a thread id is valid
-inline int t_valid(Tid id) {return (id < 0 || id > THREAD_MAX_THREADS);}
+static inline int t_invalid(Tid id) {return (id < -2 || id >= THREAD_MAX_THREADS) || (id > 0 && ( THREADS[id] == NULL || THREADS[id]->state == DEAD));}
 
 /* IMPLEMENTING HELPERS */
 Tid q_pop(Queue *q){
@@ -69,6 +69,7 @@ Tid q_pop(Queue *q){
 	}
 	Tid ret = old_head->id;
 	free(old_head);
+	q->size--;
 	return ret;
 	// could refactor this to use q_remove
 }
@@ -101,6 +102,7 @@ void q_add(Queue *q, Tid id){
 		q->head->id = id;
 		q->head->next = NULL;
 	}
+	q->size++;
 }
 
 
@@ -135,8 +137,9 @@ thread_id()
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
-        thread_main(arg); // call thread_main() function with arg
-        thread_exit(0);
+	THREADS[t_running]->setcontext_called = 0;
+	thread_main(arg); // call thread_main() function with arg
+	thread_exit(0);
 }
 
 Tid
@@ -187,13 +190,37 @@ thread_create(void (*fn) (void *), void *parg)
 Tid
 thread_yield(Tid want_tid)
 {
+	if(t_invalid(want_tid)) {
+		return THREAD_INVALID;
+	}
+
+	// get the wanted thread
+	if (want_tid == THREAD_ANY) {
+		want_tid = q_pop(ready_q);
+		if(want_tid == THREAD_NONE) return THREAD_NONE;
+	} 
+	if (want_tid == THREAD_SELF || want_tid == t_running) {
+		return t_running;
+	}
+
 	// save the state of the running thread
+	THREADS[t_running]->state = READY;
+	assert(getcontext(&THREADS[t_running]->context) == 0);
+
+	if(THREADS[t_running]->setcontext_called){
+		THREADS[t_running]->setcontext_called = 0;
+		return want_tid;
+	}
 
 	// add the current running queue to the end of the ready_q
-	// context switch to thread want_tid
-	// return running thread tid
+	q_add(ready_q, t_running);
 
-	TBD();
+	t_running = want_tid;
+	THREADS[t_running]->setcontext_called = 1;
+	THREADS[t_running]->state = RUNNING;
+	// context switch to thread want_tid
+	setcontext(&THREADS[t_running]->context);
+
 	return THREAD_FAILED;
 }
 

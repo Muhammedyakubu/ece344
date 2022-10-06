@@ -1,19 +1,31 @@
 main: setcontext_called = 0
-start = 0x55ad71546000
-end = 0x55ad7154b000
+start = 0x55784b8b8000
+end = 0x55784b8bd000
 ucontext_t size = 968 bytes
-memory address of main() = 0x55ad715463be
-memory address of the program counter (RIP) saved in mycontext = 0x55ad715463e0
+memory address of main() = 0x55784b8b83be
+memory address of the program counter (RIP) saved in mycontext = 0x55784b8b83e0
 argc = 1
-argv = 0x7ffedfa31948
-memory address of the variable setcontext_called = 0x7ffedfa3183c
-memory address of the variable err = 0x7ffedfa31838
+argv = 0x7fff85b0f318
+memory address of the variable setcontext_called = 0x7fff85b0f20c
+memory address of the variable err = 0x7fff85b0f208
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffedfa31820
+stack pointer register (RSP) stored in mycontext = 0x7fff85b0f1f0
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
 interrupt is disabled = 0
 interrupt is disabled = 1
 starting basic test
-thread.c:196: thread_yield: please implement this functionality
+initial thread returns from yield(SELF)
+initial thread returns from yield(0)
+initial thread returns from yield(ANY)
+initial thread returns from yield(INVALID)
+initial thread returns from yield(INVALID2)
+my id is 0
+message: hello from first thread
+thread returns from  first yield
+thread returns from second yield
+my id is 0
+message: hello from thread   0
+thread returns from  first yield
+thread returns from second yield
