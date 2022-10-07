@@ -66,6 +66,7 @@ static inline int t_invalid(Tid id) {
 }
 
 /* IMPLEMENTING HELPERS */
+
 Tid q_pop(Queue *q){
 	if (q->head == NULL) {
 		assert(q->tail == NULL);
@@ -262,6 +263,7 @@ thread_yield(Tid want_tid)
 		return want_tid;
 	}
 
+	// sets up the changes for the wanted thread
 	q_remove(ready_q, want_tid);	
 	THREADS[t_running]->state = RUNNING;
 	t_running = want_tid;
