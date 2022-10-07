@@ -255,18 +255,20 @@ thread_yield(Tid want_tid)
 
 	// change states for caller & save its context
 	THREADS[t_running]->state = READY;
-	q_add(ready_q, t_running);
 	assert(getcontext(&THREADS[t_running]->context) == 0);
 
 	if (setcontext_called){
 		return want_tid;
 	}
 
+	// add the current running queue to the end of the ready_q
+	// remove the wanted thead from the ready_q
+	q_add(ready_q, t_running);
 	q_remove(ready_q, want_tid);
+	
 	t_running = want_tid;
 	THREADS[t_running]->state = RUNNING;
 	// context switch to thread want_tid
-	setcontext_called = 1;
 	assert(setcontext(&THREADS[t_running]->context) >= 0);
 
 	return THREAD_FAILED;
