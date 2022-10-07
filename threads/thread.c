@@ -81,55 +81,31 @@ Tid q_pop(Queue *q){
 }
 
 void q_remove(Queue *q, Tid id){
+	if(!q->head) return 0;
 
-	Node* queue = q->head;
-	Node* curr;
-    Node* prev;
+	Node *prev = NULL, *cur = q->head;
 
-    if(queue == NULL || queue->next == NULL) 	return; 			// no thread in ready queue
-
-    prev = queue;
-    curr = queue->next; // first element of the list
-
-    while(curr->id != id && curr->next != NULL) {
-        prev = curr;
-        curr = curr->next;
+	if (cur && cur->id == id) {
+        q->head = cur->next;
+        free(cur);
+		q->size--;
+        return 1;
     }
 
-    if(curr->id == id) {
-        prev->next = curr->next;
-        free(curr);
-        curr = NULL;
-        q->size--;
-    }
+	while(cur && cur->id != id) {
+		prev = cur;
+		cur = cur->next;
+	}
 
-	return;
-	
-	// if(!q->head) return 0;
+	// we don't find the id in the list
+	if (cur == NULL)
+		return 0;
 
-	// Node *prev = NULL, *cur = q->head;
+	prev->next = cur->next;
 
-	// if (cur && cur->id == id) {
-    //     q->head = cur->next;
-    //     free(cur);
-	// 	q->size--;
-    //     return 1;
-    // }
-
-	// while(cur && cur->id != id) {
-	// 	prev = cur;
-	// 	cur = cur->next;
-	// }
-
-	// // we don't find the id in the list
-	// if (cur == NULL)
-	// 	return 0;
-
-	// prev->next = cur->next;
-
-	// free(cur);
-	// q->size--;
-	// return 1;
+	free(cur);
+	q->size--;
+	return 1;
 }
 
 void q_add(Queue *q, Tid id){
