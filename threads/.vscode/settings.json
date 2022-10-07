@@ -5,6 +5,7 @@
         "ucontext.h": "c",
         "types.h": "c",
         "random": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "ios": "c"
     }
 }
