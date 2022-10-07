@@ -3,6 +3,7 @@
         "*.html": "html",
         "interrupt.h": "c",
         "ucontext.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "random": "c"
     }
 }

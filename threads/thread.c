@@ -53,6 +53,7 @@ Tid q_pop(Queue *q);
 int q_remove(Queue *q, Tid id);
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
+void q_print(Queue *q);
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
@@ -82,7 +83,7 @@ int q_remove(Queue *q, Tid id){
 	if (cur && cur->id == id) {
         q->head = cur->next;
         free(cur);
-		q->size++;
+		q->size--;
         return 1;
     }
 
@@ -98,19 +99,26 @@ int q_remove(Queue *q, Tid id){
 	prev->next = cur->next;
 
 	free(cur);
-	q->size++;
+	q->size--;
 	return 1;
 }
 
 void q_add(Queue *q, Tid id){
+	assert(id >= 0);
 	Node *cur = q->head;
 
+	// printf("DEBUG: in q_add, checking if thread %d is already here\n", id);
+
 	while (cur && cur->next) {
+		// if thread already in the q return
 		if(cur->id == id) return;
 		cur = cur->next;
 	}
+	
+	// printf("DEBUG: didn't find thread %d in ready_q, adding it and stuff\n", id);
 
-	Node *new = (Node *)malloc(sizeof(Node));
+	Node *new = (Node *)calloc(1, sizeof(Node));
+	assert(new);
 	new->id = id;
 	new->next = NULL;
 	q->size++;
@@ -123,6 +131,18 @@ void q_add(Queue *q, Tid id){
 	return;
 }
 
+void q_print(Queue *q){
+	Node *cur = q->head;
+	int hitcount = 0;
+	while(cur){
+		printf("%p:%d->", cur, cur->id);
+		cur = cur->next;
+		hitcount++;
+	}
+	printf("NULL\n");
+	return;
+}
+
 
 /* THREAD LIBRARY FUNCTIONS */
 
@@ -130,7 +150,7 @@ void
 thread_init(void)
 {
 	// allocate space for main thread (0)
-	Thread *t = (Thread *)malloc(sizeof(Thread));
+	Thread *t = (Thread *)calloc(1, sizeof(Thread));
 	t->id = 0;
 	t->state = RUNNING;
 	t->setcontext_called = 0;
@@ -176,8 +196,8 @@ thread_create(void (*fn) (void *), void *parg)
 	if (tid == THREAD_MAX_THREADS) return THREAD_NOMORE;
 
 	// create the thread:
-	Thread *t = (Thread *)malloc(sizeof(Thread));
-	void *stack = malloc(sizeof(THREAD_MIN_STACK));
+	Thread *t = (Thread *)calloc(1, sizeof(Thread));
+	void *stack = calloc(1, sizeof(THREAD_MIN_STACK));
 
 	// 	allocate stack space 
 	if (!t || !stack) {
@@ -191,17 +211,19 @@ thread_create(void (*fn) (void *), void *parg)
 	t->stack_base = stack;
 	t->setcontext_called = 0;
 	assert(getcontext(&t->context) == 0);
+
+	void *top_stack = t->stack_base + THREAD_MIN_STACK - (greg_t)stack%16;
+	top_stack -= 8;
 	
 	// 	set rip, rsp, rsi & rdi GREGS
 	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_stub;
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
-	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (
-		t->stack_base + THREAD_MIN_STACK - 8 - (greg_t)stack%16
-		); // make sure sp is aligned to 16 bits
+	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (top_stack); // make sure sp is aligned to 16 bits
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
+	printf("CREATE: thread %d\n", t->id);
 	return t->id;
 }
 
@@ -212,12 +234,18 @@ thread_yield(Tid want_tid)
 		return THREAD_INVALID;
 	}
 
+	printf("readyq %p; before yield to %d: ", ready_q, want_tid);
+	q_print(ready_q);
+
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
 		want_tid = q_pop(ready_q);
 		if(want_tid == THREAD_NONE) return THREAD_NONE;
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
+		q_remove(ready_q, want_tid);
+		printf("readyq after removing %d: ", want_tid);
+		q_print(ready_q);
 		return t_running;
 	}
 
@@ -227,6 +255,8 @@ thread_yield(Tid want_tid)
 
 	if(THREADS[t_running]->setcontext_called){
 		THREADS[t_running]->setcontext_called = 0;
+		// printf("DEBUG: thread %d returning from yield to thread %d\n", thread_id(), want_tid);
+		
 		return want_tid;
 	}
 
@@ -235,7 +265,9 @@ thread_yield(Tid want_tid)
 	// remove the now running thead from the ready_q
 	if(!q_remove(ready_q, want_tid))
 		printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
-
+	
+	printf("DEBUG: thread %d yielding to thread %d\n", thread_id(), want_tid);
+	printf("readyq after yield: "); q_print(ready_q);
 	t_running = want_tid;
 	THREADS[t_running]->setcontext_called = 1;
 	THREADS[t_running]->state = RUNNING;

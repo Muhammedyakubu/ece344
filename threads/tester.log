@@ -1,32 +1,177 @@
 main: setcontext_called = 0
-start = 0x562c16d9c000
-end = 0x562c16da1000
+start = 0x561c0cc8d000
+end = 0x561c0cc92000
 ucontext_t size = 968 bytes
-memory address of main() = 0x562c16d9c3be
-memory address of the program counter (RIP) saved in mycontext = 0x562c16d9c3e0
+memory address of main() = 0x561c0cc8d3ce
+memory address of the program counter (RIP) saved in mycontext = 0x561c0cc8d3f0
 argc = 1
-argv = 0x7ffec93619e8
-memory address of the variable setcontext_called = 0x7ffec93618dc
-memory address of the variable err = 0x7ffec93618d8
+argv = 0x7ffed2de2e78
+memory address of the variable setcontext_called = 0x7ffed2de2d6c
+memory address of the variable err = 0x7ffed2de2d68
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffec93618c0
+stack pointer register (RSP) stored in mycontext = 0x7ffed2de2d50
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
 interrupt is disabled = 0
 interrupt is disabled = 1
 starting basic test
+readyq before yield to -2: NULL
+readyq after removing -2: NULL
 initial thread returns from yield(SELF)
+readyq before yield to 0: NULL
+readyq after removing 0: NULL
 initial thread returns from yield(0)
+readyq before yield to -1: NULL
 initial thread returns from yield(ANY)
 initial thread returns from yield(INVALID)
 initial thread returns from yield(INVALID2)
+CREATE: thread 1
 my id is 0
-message: hello from first thread
+readyq before yield to 1: 0x5628ce187eb0:1->NULL
+DEBUG: thread 0 yielding to thread 1
+readyq after yield: 0x5628ce187ed0:0->NULL
+thread 1 -> message: hello from first thread
+readyq before yield to -2: 0x5628ce187ed0:0->NULL
+readyq after removing -2: 0x5628ce187ed0:0->NULL
 thread returns from  first yield
+readyq before yield to -2: 0x5628ce187ed0:0->NULL
+readyq after removing -2: 0x5628ce187ed0:0->NULL
 thread returns from second yield
+readyq before yield to -1: 0x5628ce187ed0:0->NULL
 DEBUG: thread 0 was not in the ready_q
+DEBUG: thread 1 yielding to thread 0
+readyq after yield: 0x5628ce187ef0:1->NULL
+CREATE: thread 2
+CREATE: thread 3
+CREATE: thread 4
+CREATE: thread 5
+CREATE: thread 6
+CREATE: thread 7
+CREATE: thread 8
+CREATE: thread 9
+CREATE: thread 10
+CREATE: thread 11
+CREATE: thread 12
+CREATE: thread 13
+CREATE: thread 14
+CREATE: thread 15
+CREATE: thread 16
+CREATE: thread 17
+CREATE: thread 18
+CREATE: thread 19
+CREATE: thread 20
+CREATE: thread 21
+CREATE: thread 22
+CREATE: thread 23
+CREATE: thread 24
+CREATE: thread 25
+CREATE: thread 26
+CREATE: thread 27
+CREATE: thread 28
+CREATE: thread 29
+CREATE: thread 30
+CREATE: thread 31
+CREATE: thread 32
+CREATE: thread 33
+CREATE: thread 34
+CREATE: thread 35
+CREATE: thread 36
+CREATE: thread 37
+CREATE: thread 38
+CREATE: thread 39
+CREATE: thread 40
+CREATE: thread 41
+CREATE: thread 42
+CREATE: thread 43
+CREATE: thread 44
+CREATE: thread 45
+CREATE: thread 46
+CREATE: thread 47
+CREATE: thread 48
+CREATE: thread 49
+CREATE: thread 50
+CREATE: thread 51
+CREATE: thread 52
+CREATE: thread 53
+CREATE: thread 54
+CREATE: thread 55
+CREATE: thread 56
+CREATE: thread 57
+CREATE: thread 58
+CREATE: thread 59
+CREATE: thread 60
+CREATE: thread 61
+CREATE: thread 62
+CREATE: thread 63
+CREATE: thread 64
+CREATE: thread 65
+CREATE: thread 66
+CREATE: thread 67
+CREATE: thread 68
+CREATE: thread 69
+CREATE: thread 70
+CREATE: thread 71
+CREATE: thread 72
+CREATE: thread 73
+CREATE: thread 74
+CREATE: thread 75
+CREATE: thread 76
+CREATE: thread 77
+CREATE: thread 78
+CREATE: thread 79
+CREATE: thread 80
+CREATE: thread 81
+CREATE: thread 82
+CREATE: thread 83
+CREATE: thread 84
+CREATE: thread 85
+CREATE: thread 86
+CREATE: thread 87
+CREATE: thread 88
+CREATE: thread 89
+CREATE: thread 90
+CREATE: thread 91
+CREATE: thread 92
+CREATE: thread 93
+CREATE: thread 94
+CREATE: thread 95
+CREATE: thread 96
+CREATE: thread 97
+CREATE: thread 98
+CREATE: thread 99
+CREATE: thread 100
+CREATE: thread 101
+CREATE: thread 102
+CREATE: thread 103
+CREATE: thread 104
+CREATE: thread 105
+CREATE: thread 106
+CREATE: thread 107
+CREATE: thread 108
+CREATE: thread 109
+CREATE: thread 110
+CREATE: thread 111
+CREATE: thread 112
+CREATE: thread 113
+CREATE: thread 114
+CREATE: thread 115
+CREATE: thread 116
+CREATE: thread 117
+CREATE: thread 118
+CREATE: thread 119
+CREATE: thread 120
+CREATE: thread 121
+CREATE: thread 122
+CREATE: thread 123
+CREATE: thread 124
+CREATE: thread 125
+CREATE: thread 126
+CREATE: thread 127
+CREATE: thread 128
+CREATE: thread 129
 my id is 0
-message: hello from thread   0
-thread returns from  first yield
-thread returns from second yield
+readyq before yield to 2: 0x5628ce187ef0:1->0x5628ce188320:2->0x5628ce188750:3->0x5628ce188b80:4->0x5628ce188fb0:5->0x5628ce1893e0:6->0x5628ce189810:7->0x5628ce189c40:8->0x5628ce18a070:9->0x5628ce18a4a0:10->0x5628ce18a8d0:11->0x5628ce18ad00:12->0x5628ce18b130:13->0x5628ce18b560:14->0x5628ce18b990:15->0x5628ce18bdc0:16->0x5628ce18c1f0:17->0x5628ce18c620:18->0x5628ce18ca50:19->0x5628ce18ce80:20->0x5628ce18d2b0:21->0x5628ce18d6e0:22->0x5628ce18db10:23->0x5628ce18df40:24->0x5628ce18e370:25->0x5628ce18e7a0:26->0x5628ce18ebd0:27->0x5628ce18f000:28->0x5628ce18f430:29->0x5628ce18f860:30->0x5628ce18fc90:31->0x5628ce1900c0:32->0x5628ce1904f0:33->0x5628ce190920:34->0x5628ce190d50:35->0x5628ce191180:36->0x5628ce1915b0:37->0x5628ce1919e0:38->0x5628ce191e10:39->0x5628ce192240:40->0x5628ce192670:41->0x5628ce192aa0:42->0x5628ce192ed0:43->0x5628ce193300:44->0x5628ce193730:45->0x5628ce193b60:46->0x5628ce193f90:47->0x5628ce1943c0:48->0x5628ce1947f0:49->0x5628ce194c20:50->0x5628ce195050:51->0x5628ce195480:52->0x5628ce1958b0:53->0x5628ce195ce0:54->0x5628ce196110:55->0x5628ce196540:56->0x5628ce196970:57->0x5628ce196da0:58->0x5628ce1971d0:59->0x5628ce197600:60->0x5628ce197a30:61->0x5628ce197e60:62->0x5628ce198290:63->0x5628ce1986c0:64->0x5628ce198af0:65->0x5628ce198f20:66->0x5628ce199350:67->0x5628ce199780:68->0x5628ce199bb0:69->0x5628ce199fe0:70->0x5628ce19a410:71->0x5628ce19a840:72->0x5628ce19ac70:73->0x5628ce19b0a0:74->0x5628ce19b4d0:75->0x5628ce19b900:76->0x5628ce19bd30:77->0x5628ce19c160:78->0x5628ce19c590:79->0x5628ce19c9c0:80->0x5628ce19cdf0:81->0x5628ce19d220:82->0x5628ce19d650:83->0x5628ce19da80:84->0x5628ce19deb0:85->0x5628ce19e2e0:86->0x5628ce19e710:87->0x5628ce19eb40:88->0x5628ce19ef70:89->0x5628ce19f3a0:90->0x5628ce19f7d0:91->0x5628ce19fc00:92->0x5628ce1a0030:93->0x5628ce1a0460:94->0x5628ce1a0890:95->0x5628ce1a0cc0:96->0x5628ce1a10f0:97->0x5628ce1a1520:98->0x5628ce1a1950:99->0x5628ce1a1d80:100->0x5628ce1a21b0:101->0x5628ce1a25e0:102->0x5628ce1a2a10:103->0x5628ce1a2e40:104->0x5628ce1a3270:105->0x5628ce1a36a0:106->0x5628ce1a3ad0:107->0x5628ce1a3f00:108->0x5628ce1a4330:109->0x5628ce1a4760:110->0x5628ce1a4b90:111->0x5628ce1a4fc0:112->0x5628ce1a53f0:113->0x5628ce1a5820:114->0x5628ce1a5c50:115->0x5628ce1a6080:116->0x5628ce1a64b0:117->0x5628ce1a68e0:118->0x5628ce1a6d10:119->0x5628ce1a7140:120->0x5628ce1a7570:121->0x5628ce1a79a0:122->0x5628ce1a7dd0:123->0x5628ce1a8200:124->0x5628ce1a8630:125->0x5628ce1a8a60:126->0x5628ce1a8e90:127->0x5628ce1a92c0:128->0x5628ce1a96f0:129->NULL
+DEBUG: thread 0 yielding to thread 2
+readyq after yield: 0x5628ce187ef0:1->0x5628ce188750:3->0x5628ce188b80:4->0x5628ce188fb0:5->0x5628ce1893e0:6->0x5628ce189810:7->0x5628ce189c40:8->0x5628ce18a070:9->0x5628ce18a4a0:10->0x5628ce18a8d0:11->0x5628ce18ad00:12->0x5628ce18b130:13->0x5628ce18b560:14->0x5628ce18b990:15->0x5628ce18bdc0:16->0x5628ce18c1f0:17->0x5628ce18c620:18->0x5628ce18ca50:19->0x5628ce18ce80:20->0x5628ce18d2b0:21->0x5628ce18d6e0:22->0x5628ce18db10:23->0x5628ce18df40:24->0x5628ce18e370:25->0x5628ce18e7a0:26->0x5628ce18ebd0:27->0x5628ce18f000:28->0x5628ce18f430:29->0x5628ce18f860:30->0x5628ce18fc90:31->0x5628ce1900c0:32->0x5628ce1904f0:33->0x5628ce190920:34->0x5628ce190d50:35->0x5628ce191180:36->0x5628ce1915b0:37->0x5628ce1919e0:38->0x5628ce191e10:39->0x5628ce192240:40->0x5628ce192670:41->0x5628ce192aa0:42->0x5628ce192ed0:43->0x5628ce193300:44->0x5628ce193730:45->0x5628ce193b60:46->0x5628ce193f90:47->0x5628ce1943c0:48->0x5628ce1947f0:49->0x5628ce194c20:50->0x5628ce195050:51->0x5628ce195480:52->0x5628ce1958b0:53->0x5628ce195ce0:54->0x5628ce196110:55->0x5628ce196540:56->0x5628ce196970:57->0x5628ce196da0:58->0x5628ce1971d0:59->0x5628ce197600:60->0x5628ce197a30:61->0x5628ce197e60:62->0x5628ce198290:63->0x5628ce1986c0:64->0x5628ce198af0:65->0x5628ce198f20:66->0x5628ce199350:67->0x5628ce199780:68->0x5628ce199bb0:69->0x5628ce199fe0:70->0x5628ce19a410:71->0x5628ce19a840:72->0x5628ce19ac70:73->0x5628ce19b0a0:74->0x5628ce19b4d0:75->0x5628ce19b900:76->0x5628ce19bd30:77->0x5628ce19c160:78->0x5628ce19c590:79->0x5628ce19c9c0:80->0x5628ce19cdf0:81->0x5628ce19d220:82->0x5628ce19d650:83->0x5628ce19da80:84->0x5628ce19deb0:85->0x5628ce19e2e0:86->0x5628ce19e710:87->0x5628ce19eb40:88->0x5628ce19ef70:89->0x5628ce19f3a0:90->0x5628ce19f7d0:91->0x5628ce19fc00:92->0x5628ce1a0030:93->0x5628ce1a0460:94->0x5628ce1a0890:95->0x5628ce1a0cc0:96->0x5628ce1a10f0:97->0x5628ce1a1520:98->0x5628ce1a1950:99->0x5628ce1a1d80:100->0x5628ce1a21b0:101->0x5628ce1a25e0:102->0x5628ce1a2a10:103->0x5628ce1a2e40:104->0x5628ce1a3270:105->0x5628ce1a36a0:106->0x5628ce1a3ad0:107->0x5628ce1a3f00:108->0x5628ce1a4330:109->0x5628ce1a4760:110->0x5628ce1a4b90:111->0x5628ce1a4fc0:112->0x5628ce1a53f0:113->0x5628ce1a5820:114->0x5628ce1a5c50:115->0x5628ce1a6080:116->0x5628ce1a64b0:117->0x5628ce1a68e0:118->0x5628ce1a6d10:119->0x5628ce1a7140:120->0x5628ce1a7570:121->0x5628ce1a79a0:122->0x5628ce1a7dd0:123->0x5628ce1a8200:124->0x5628ce1a8630:125->0x5628ce1a8a60:126->0x5628ce1a8e90:127->0x5628ce1a92c0:128->0x5628ce1a96f0:129->0x5628ce1a9710:0->NULL
+thread 2 -> message: hello from thread   0
