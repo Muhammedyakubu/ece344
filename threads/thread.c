@@ -20,7 +20,6 @@ struct wait_queue {
 /* This is the thread control block */
 typedef struct thread {
 	Tid id;	
-	int setcontext_called;
 	int state;
 	struct ucontext_t context;
 	void* stack_base;
@@ -155,7 +154,6 @@ thread_init(void)
 	Thread *t = (Thread *)malloc(sizeof(Thread));
 	t->id = 0;
 	t->state = RUNNING;
-	t->setcontext_called = 0;
 	t->stack_base = NULL;
 	// initialize thread context
 	assert(getcontext(&t->context) == 0);
@@ -177,7 +175,6 @@ thread_id()
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
-	THREADS[t_running]->setcontext_called = 0;
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit(0);
 }
@@ -213,7 +210,6 @@ thread_create(void (*fn) (void *), void *parg)
 	t->id = tid;
 	t->state = READY;
 	t->stack_base = stack;
-	t->setcontext_called = 0;
 	assert(getcontext(&t->context) == 0);
 
 	// make sure sp is aligned to 16 bits
@@ -247,39 +243,33 @@ thread_yield(Tid want_tid)
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
 		want_tid = q_pop(ready_q);
-		if(want_tid == THREAD_NONE) return THREAD_NONE;
+		if (want_tid == THREAD_NONE) return THREAD_NONE;
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		q_remove(ready_q, want_tid);
-		// printf("readyq after removing %d: ", want_tid);
-		// q_print(ready_q);
 		return t_running;
 	}
 
-	// save the state of the running thread
+	// volatile forces this variable unto the caller's stack
+	volatile int setcontext_called = 0;
+
+	// change states for caller & save its context
 	THREADS[t_running]->state = READY;
 	assert(getcontext(&THREADS[t_running]->context) == 0);
 
-	if(THREADS[t_running]->setcontext_called){
-		THREADS[t_running]->setcontext_called = 0;
-		// printf("DEBUG: thread %d returning from yield to thread %d\n", thread_id(), want_tid);
-		
+	if (setcontext_called){
 		return want_tid;
 	}
 
 	// add the current running queue to the end of the ready_q
+	// remove the wanted thead from the ready_q
 	q_add(ready_q, t_running);
-	// remove the now running thead from the ready_q
 	q_remove(ready_q, want_tid);
-		// printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
 	
-	// printf("DEBUG: thread %d yielding to thread %d\n", thread_id(), want_tid);
-	// printf("readyq after yield: "); q_print(ready_q);
 	t_running = want_tid;
-	THREADS[t_running]->setcontext_called = 1;
 	THREADS[t_running]->state = RUNNING;
 	// context switch to thread want_tid
-	setcontext(&THREADS[t_running]->context);
+	assert(setcontext(&THREADS[t_running]->context) >= 0);
 
 	return THREAD_FAILED;
 }
