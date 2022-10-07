@@ -33,14 +33,14 @@ typedef struct node {
 } Node;
 
 typedef struct queue {
-	Node *head;
+	Node *head, *tail;
 	int size;
 } Queue;
 
 /* GLOBALS */
 
 Tid t_running;	// houses the currently running thread for quick access
-Queue ready_queue = {NULL, 0};
+Queue ready_queue = {NULL, NULL, 0};
 Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
@@ -51,7 +51,7 @@ Tid q_pop(Queue *q);
 
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
-void q_remove(Queue *q, Tid id);
+bool q_remove(Queue *q, Tid id);
 
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
@@ -68,29 +68,25 @@ static inline int t_invalid(Tid id) {
 
 /* IMPLEMENTING HELPERS */
 Tid q_pop(Queue *q){
-	if(!q->head) return THREAD_NONE;
+	if (q->head == NULL) {
+		assert(q->tail == NULL);
+		return THREAD_NONE;
+	}
 
 	Node *old_head = q->head;
+	// doesn't matter if head is null
 	q->head = q->head->next;
 
 	Tid ret = old_head->id;
 	free(old_head);
 	q->size--;
 	return ret;
-	// could refactor this to use q_remove
 }
 
-void q_remove(Queue *q, Tid id){
+bool q_remove(Queue *q, Tid id){
 	if(!q->head) return 0;
 
 	Node *prev = NULL, *cur = q->head;
-
-	if (cur && cur->id == id) {
-        q->head = cur->next;
-        free(cur);
-		q->size--;
-        return 1;
-    }
 
 	while(cur && cur->id != id) {
 		prev = cur;
@@ -98,42 +94,43 @@ void q_remove(Queue *q, Tid id){
 	}
 
 	// we don't find the id in the list
-	if (cur == NULL)
-		return 0;
+	if (cur == NULL) return 0;
 
+	if (prev == NULL) {
+		// remove head, return a truthy value
+		return q_pop(q) + 1;
+	}
+
+	if (cur == q->tail) {
+		q->tail = prev;
+	}
 	prev->next = cur->next;
-
 	free(cur);
+
 	q->size--;
 	return 1;
 }
 
 void q_add(Queue *q, Tid id){
-	assert(id >= 0);
-	Node *cur = q->head;
+	assert(id >= 0); // having some weird memory corruption bugs 
 
-	// printf("DEBUG: in q_add, checking if thread %d is already here\n", id);
-
-	while (cur && cur->next) {
-		// if thread already in the q return
-		if(cur->id == id) return;
-		cur = cur->next;
-	}
-	
-	// printf("DEBUG: didn't find thread %d in ready_q, adding it and stuff\n", id);
+	q->size++;
 
 	Node *new = (Node *)malloc(sizeof(Node));
 	assert(new);
 	new->id = id;
 	new->next = NULL;
-	q->size++;
 
-	if(!cur) {
-		q->head = new;
-	} else {
-		cur->next = new;
+	if (q->head == NULL) {
+		q->head = q->tail = new;
 	}
-	return;
+	else {
+		assert(q->tail && q->head); // these are either both present or absent
+		q->tail->next = new;
+		q->tail = new;
+		return;
+	}
+
 }
 
 void q_print(Queue *q){
@@ -198,13 +195,15 @@ thread_create(void (*fn) (void *), void *parg)
 	}
 
 	// if tid was not reassigned that means that we can't make more threads
-	if (tid == THREAD_MAX_THREADS) return THREAD_NOMORE;
+	if (tid == THREAD_MAX_THREADS) {
+		return THREAD_NOMORE;
+	}
 
 	// create the thread:
 	Thread *t = (Thread *)malloc(sizeof(Thread));
+	// 	allocate stack space 
 	void *stack = malloc(sizeof(THREAD_MIN_STACK));
 
-	// 	allocate stack space 
 	if (!t || !stack) {
 		return THREAD_NOMEMORY;	
 	}
@@ -217,15 +216,21 @@ thread_create(void (*fn) (void *), void *parg)
 	t->setcontext_called = 0;
 	assert(getcontext(&t->context) == 0);
 
-	void *top_stack = t->stack_base + THREAD_MIN_STACK - (greg_t)stack%16;
-	top_stack -= 8;
+	// make sure sp is aligned to 16 bits
+	void *top_stack = t->stack_base + THREAD_MIN_STACK;
+	int offset = (long long int) top_stack % 16;
+	if (offset < 8) {
+		offset = 8 + offset;
+	} else {
+		offset = offset - 8;
+	}
+	void* rsp = top_stack - offset;
 	
 	// 	set rip, rsp, rsi & rdi GREGS
 	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_stub;
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
-	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (top_stack); // make sure sp is aligned to 16 bits
-	t->context.uc_mcontext.gregs[REG_RBP] = (greg_t) (stack);
+	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (rsp); 
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
@@ -238,9 +243,6 @@ thread_yield(Tid want_tid)
 	if(t_invalid(want_tid)) {
 		return THREAD_INVALID;
 	}
-
-	// printf("readyq %p; before yield to %d: ", ready_q, want_tid);
-	// q_print(ready_q);
 
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
