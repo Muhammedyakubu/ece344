@@ -5,6 +5,12 @@
 #include "thread.h"
 #include "interrupt.h"
 
+#define DEBUG_USE_VALGRIND
+
+#ifdef DEBUG_USE_VALGRIND
+#include <valgrind.h>
+#endif
+
 // enum for thread states
 enum { 
 	READY = 0,
@@ -228,6 +234,11 @@ thread_create(void (*fn) (void *), void *parg)
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
 	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (rsp); 
+
+#ifdef DEBUG_USE_VALGRIND
+	unsigned valgrind_register_retval = VALGRIND_STACK_REGISTER(rsp - THREAD_MIN_STACK, rsp);
+	assert(valgrind_register_retval);
+#endif
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
