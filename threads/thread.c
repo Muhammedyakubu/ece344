@@ -50,7 +50,7 @@ Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 Tid q_pop(Queue *q);
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
-void q_remove(Queue *q, Tid id);
+int q_remove(Queue *q, Tid id);
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
 void q_print(Queue *q);
@@ -74,56 +74,33 @@ Tid q_pop(Queue *q){
 	// could refactor this to use q_remove
 }
 
-void q_remove(Queue *q, Tid id){
-
-	Node* queue = q->head;
-	Node* curr;
-    Node* prev;
-
-    if(queue == NULL || queue->next == NULL) 	return; 			// no thread in ready queue
-
-    prev = queue;
-    curr = queue->next; // first element of the list
-
-    while(curr->id != id && curr->next != NULL) {
-        prev = curr;
-        curr = curr->next;
-    }
-
-    if(curr->id == id) {
-        prev->next = curr->next;
-        free(curr);
-        curr = NULL;
-        q->size--;
-    }
-
-	return;
+int q_remove(Queue *q, Tid id){
 	
-	// if(!q->head) return 0;
+	if(!q->head) return 0;
 
-	// Node *prev = NULL, *cur = q->head;
+	Node *prev = NULL, *cur = q->head;
 
-	// if (cur && cur->id == id) {
-    //     q->head = cur->next;
-    //     free(cur);
-	// 	q->size--;
-    //     return 1;
-    // }
+	if (cur && cur->id == id) {
+        q->head = cur->next;
+        free(cur);
+		q->size--;
+        return 1;
+    }
 
-	// while(cur && cur->id != id) {
-	// 	prev = cur;
-	// 	cur = cur->next;
-	// }
+	while(cur && cur->id != id) {
+		prev = cur;
+		cur = cur->next;
+	}
 
-	// // we don't find the id in the list
-	// if (cur == NULL)
-	// 	return 0;
+	// we don't find the id in the list
+	if (cur == NULL)
+		return 0;
 
-	// prev->next = cur->next;
+	prev->next = cur->next;
 
-	// free(cur);
-	// q->size--;
-	// return 1;
+	free(cur);
+	q->size--;
+	return 1;
 }
 
 void q_add(Queue *q, Tid id){
@@ -243,7 +220,6 @@ thread_create(void (*fn) (void *), void *parg)
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
 	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (top_stack); // make sure sp is aligned to 16 bits
-	t->context.uc_mcontext.gregs[REG_RBP] = (greg_t) (stack);
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
@@ -271,6 +247,7 @@ thread_yield(Tid want_tid)
 		printf("readyq after removing %d: ", want_tid);
 		q_print(ready_q);
 		return t_running;
+		// want_tid = t_running;
 	}
 
 	// save the state of the running thread
