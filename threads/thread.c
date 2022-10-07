@@ -50,7 +50,7 @@ Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 Tid q_pop(Queue *q);
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
-int q_remove(Queue *q, Tid id);
+void q_remove(Queue *q, Tid id);
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
 void q_print(Queue *q);
@@ -74,33 +74,56 @@ Tid q_pop(Queue *q){
 	// could refactor this to use q_remove
 }
 
-int q_remove(Queue *q, Tid id){
-	
-	if(!q->head) return 0;
+void q_remove(Queue *q, Tid id){
 
-	Node *prev = NULL, *cur = q->head;
+	Node* queue = q->head;
+	Node* curr;
+    Node* prev;
 
-	if (cur && cur->id == id) {
-        q->head = cur->next;
-        free(cur);
-		q->size--;
-        return 1;
+    if(queue == NULL || queue->next == NULL) 	return; 			// no thread in ready queue
+
+    prev = queue;
+    curr = queue->next; // first element of the list
+
+    while(curr->id != id && curr->next != NULL) {
+        prev = curr;
+        curr = curr->next;
     }
 
-	while(cur && cur->id != id) {
-		prev = cur;
-		cur = cur->next;
-	}
+    if(curr->id == id) {
+        prev->next = curr->next;
+        free(curr);
+        curr = NULL;
+        q->size--;
+    }
 
-	// we don't find the id in the list
-	if (cur == NULL)
-		return 0;
+	return;
+	
+	// if(!q->head) return 0;
 
-	prev->next = cur->next;
+	// Node *prev = NULL, *cur = q->head;
 
-	free(cur);
-	q->size--;
-	return 1;
+	// if (cur && cur->id == id) {
+    //     q->head = cur->next;
+    //     free(cur);
+	// 	q->size--;
+    //     return 1;
+    // }
+
+	// while(cur && cur->id != id) {
+	// 	prev = cur;
+	// 	cur = cur->next;
+	// }
+
+	// // we don't find the id in the list
+	// if (cur == NULL)
+	// 	return 0;
+
+	// prev->next = cur->next;
+
+	// free(cur);
+	// q->size--;
+	// return 1;
 }
 
 void q_add(Queue *q, Tid id){
@@ -117,7 +140,7 @@ void q_add(Queue *q, Tid id){
 	
 	// printf("DEBUG: didn't find thread %d in ready_q, adding it and stuff\n", id);
 
-	Node *new = (Node *)calloc(1, sizeof(Node));
+	Node *new = (Node *)malloc(sizeof(Node));
 	assert(new);
 	new->id = id;
 	new->next = NULL;
@@ -150,7 +173,7 @@ void
 thread_init(void)
 {
 	// allocate space for main thread (0)
-	Thread *t = (Thread *)calloc(1, sizeof(Thread));
+	Thread *t = (Thread *)malloc(sizeof(Thread));
 	t->id = 0;
 	t->state = RUNNING;
 	t->setcontext_called = 0;
@@ -196,8 +219,8 @@ thread_create(void (*fn) (void *), void *parg)
 	if (tid == THREAD_MAX_THREADS) return THREAD_NOMORE;
 
 	// create the thread:
-	Thread *t = (Thread *)calloc(1, sizeof(Thread));
-	void *stack = calloc(1, sizeof(THREAD_MIN_STACK));
+	Thread *t = (Thread *)malloc(sizeof(Thread));
+	void *stack = malloc(sizeof(THREAD_MIN_STACK));
 
 	// 	allocate stack space 
 	if (!t || !stack) {
@@ -220,6 +243,7 @@ thread_create(void (*fn) (void *), void *parg)
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
 	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (top_stack); // make sure sp is aligned to 16 bits
+	t->context.uc_mcontext.gregs[REG_RBP] = (greg_t) (stack);
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
@@ -263,8 +287,8 @@ thread_yield(Tid want_tid)
 	// add the current running queue to the end of the ready_q
 	q_add(ready_q, t_running);
 	// remove the now running thead from the ready_q
-	if(!q_remove(ready_q, want_tid))
-		printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
+	q_remove(ready_q, want_tid);
+		// printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
 	
 	printf("DEBUG: thread %d yielding to thread %d\n", thread_id(), want_tid);
 	printf("readyq after yield: "); q_print(ready_q);
