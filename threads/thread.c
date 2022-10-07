@@ -6,11 +6,11 @@
 #include "interrupt.h"
 
 // #define DEBUG_USE_VALGRIND
-// int debug = 1;
 
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
 #endif
+int debug = 0;
 
 // enum for thread states
 enum { 
@@ -74,61 +74,72 @@ static inline int t_invalid(Tid id) {
 
 /* IMPLEMENTING HELPERS */
 
-Tid q_pop(Queue *q) {
-    if (q->size == 0) {
-        return THREAD_NONE;
-    }
-    Node *temp = q->head;
-    Tid id = temp->id;
-    q->head = q->head->next;
+Tid q_pop(Queue *q){
+	if (q->head == NULL) {
+		assert(q->tail == NULL);
+		return THREAD_NONE;
+	}
 
-    if  (q->head == NULL) {
-        q->tail = NULL;
-    }
+	Node *old_head = q->head;
+	q->head = q->head->next;
 
-    free(temp);
-    q->size--;
-    return id;
+	if (q->head == NULL) q->tail = NULL;
+
+	Tid ret = old_head->id;
+	free(old_head);
+	q->size--;
+	return ret;
 }
 
-bool q_remove(Queue *q, Tid id) {
-    if (q->size == 0) {
-        return 0;
-    }
-    Node *temp = q->head;
-    Node *prev = NULL;
-    while (temp != NULL) {
-        if (temp->id == id) {
-            if (prev == NULL) {
-                q_pop(q);
-            } else {
-                prev->next = temp->next;
-            }
-            if (temp->next == NULL) {
-                q->tail = prev;
-            }
-            free(temp);
-            q->size--;
-            return 1;
-        }
-        prev = temp;
-        temp = temp->next;
-    }
-    return 0;
+bool q_remove(Queue *q, Tid id){
+	if(!q->head) return 0;
+
+	Node *prev = NULL, *cur = q->head;
+
+	while(cur && cur->id != id) {
+		prev = cur;
+		cur = cur->next;
+	}
+
+	// we don't find the id in the list
+	if (cur == NULL) return 0;
+
+	if (prev == NULL) {
+		// remove head, return a truthy value
+		return q_pop(q) + 1;
+	}
+
+	if (cur == q->tail) {
+		q->tail = prev;
+	}
+	prev->next = cur->next;
+	free(cur);
+
+	if (debug) printf("removed %d from q\n", id);
+	q->size--;
+	return 1;
 }
 
-void q_add(Queue *q, Tid id) {
-    Node *new_node = malloc(sizeof(Node));
-    new_node->id = id;
-    new_node->next = NULL;
-    if (q->size == 0) {
-        q->head = new_node;
-        q->tail = new_node;
-    } else {
-        q->tail->next = new_node;
-        q->tail = new_node;
-    }
-    q->size++;
+void q_add(Queue *q, Tid id){
+	assert(id >= 0); // having some weird memory corruption bugs 
+
+	q->size++;
+
+	Node *new = (Node *)malloc(sizeof(Node));
+	assert(new);
+	new->id = id;
+	new->next = NULL;
+
+	if (q->head == NULL) {
+		q->head = q->tail = new;
+	}
+	else {
+		assert(q->tail && q->head); // these are either both present or absent
+		q->tail->next = new;
+		q->tail = new;
+		return;
+	}
+
 }
 
 void q_print(Queue *q){
