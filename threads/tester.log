@@ -1,15 +1,15 @@
 main: setcontext_called = 0
-start = 0x558379dae000
-end = 0x558379db3000
+start = 0x562c16d9c000
+end = 0x562c16da1000
 ucontext_t size = 968 bytes
-memory address of main() = 0x558379dae3be
-memory address of the program counter (RIP) saved in mycontext = 0x558379dae3e0
+memory address of main() = 0x562c16d9c3be
+memory address of the program counter (RIP) saved in mycontext = 0x562c16d9c3e0
 argc = 1
-argv = 0x7fff376bfe08
-memory address of the variable setcontext_called = 0x7fff376bfcfc
-memory address of the variable err = 0x7fff376bfcf8
+argv = 0x7ffec93619e8
+memory address of the variable setcontext_called = 0x7ffec93618dc
+memory address of the variable err = 0x7ffec93618d8
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7fff376bfce0
+stack pointer register (RSP) stored in mycontext = 0x7ffec93618c0
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
@@ -25,6 +25,7 @@ my id is 0
 message: hello from first thread
 thread returns from  first yield
 thread returns from second yield
+DEBUG: thread 0 was not in the ready_q
 my id is 0
 message: hello from thread   0
 thread returns from  first yield

@@ -33,14 +33,14 @@ typedef struct node {
 } Node;
 
 typedef struct queue {
-	Node *head, *tail;
+	Node *head;
 	int size;
 } Queue;
 
 /* GLOBALS */
 
 Tid t_running;	// houses the currently running thread for quick access
-Queue ready_queue = {NULL, NULL, 0};
+Queue ready_queue = {NULL, 0};
 Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
@@ -62,11 +62,10 @@ static inline int t_invalid(Tid id) {return (id < -2 || id >= THREAD_MAX_THREADS
 /* IMPLEMENTING HELPERS */
 Tid q_pop(Queue *q){
 	if(!q->head) return THREAD_NONE;
+
 	Node *old_head = q->head;
 	q->head = q->head->next;
-	if(q->head == NULL) {
-		q->tail = NULL;
-	}
+
 	Tid ret = old_head->id;
 	free(old_head);
 	q->size--;
@@ -76,66 +75,52 @@ Tid q_pop(Queue *q){
 
 int q_remove(Queue *q, Tid id){
 	
-	if(q->head == NULL) {
-		return 0;
-	}
-	// if only one node 
-	if(q->head->next == NULL) {
-		if(q->head->id != id) return 0;
+	if(!q->head) return 0;
 
-		free(q->head);
-		q->head = q->tail = NULL;
-		q->size--;
-		return 1;
-	}
+	Node *prev = NULL, *cur = q->head;
 
-	Node *cur = q->head;
-	Node *prev = NULL;
-	while(cur){
-		assert(cur->id);
-		if(cur->id == id) break;
+	if (cur && cur->id == id) {
+        q->head = cur->next;
+        free(cur);
+		q->size++;
+        return 1;
+    }
+
+	while(cur && cur->id != id) {
 		prev = cur;
 		cur = cur->next;
 	}
 
-	if(cur == NULL) return 0;	// we didn't find Tid in q
-
-	// if the wanted node is the first node
-	if(cur == q->head && prev == NULL){
-		q->head = q->head->next;
-		free(cur);
-		q->size--;
-		return 1;
-	}
-
-	// if the wanted node is the last node
-	if(cur == q->tail) {
-		q->tail = prev; // if we're gonna remove the tail then move it one back
-		q->tail->next = NULL; 
-		free(cur);
-		q->size--;
-		return 1;
-	}
+	// we don't find the id in the list
+	if (cur == NULL)
+		return 0;
 
 	prev->next = cur->next;
+
 	free(cur);
-	q->size--;
+	q->size++;
 	return 1;
 }
 
 void q_add(Queue *q, Tid id){
-	if(q->tail) {
-		Node *new = (Node *)malloc(sizeof(Node));
-		new->id = id;
-		new->next = NULL;
-		q->tail->next = new;
-		q->tail = new;
-	} else {	// means the q is empty
-		q->head = q->tail = (Node *)malloc(sizeof(Node));
-		q->head->id = id;
-		q->head->next = NULL;
+	Node *cur = q->head;
+
+	while (cur && cur->next) {
+		if(cur->id == id) return;
+		cur = cur->next;
 	}
+
+	Node *new = (Node *)malloc(sizeof(Node));
+	new->id = id;
+	new->next = NULL;
 	q->size++;
+
+	if(!cur) {
+		q->head = new;
+	} else {
+		cur->next = new;
+	}
+	return;
 }
 
 
