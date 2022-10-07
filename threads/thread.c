@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "thread.h"
 #include "interrupt.h"
-#include "queue.h"
 
 // enum for thread states
 enum { 
@@ -27,7 +26,16 @@ typedef struct thread {
 	void* stack_base;
 } Thread;
 
+/* queue data structure */
+typedef struct node {
+	Tid id;
+	struct node *next;
+} Node;
 
+typedef struct queue {
+	Node *head;
+	int size;
+} Queue;
 
 /* GLOBALS */
 
