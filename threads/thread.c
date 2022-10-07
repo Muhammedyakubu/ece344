@@ -75,19 +75,24 @@ Tid q_pop(Queue *q){
 }
 
 int q_remove(Queue *q, Tid id){
-	if(q->head == NULL) return 0;
+	
+	if(q->head == NULL) {
+		return 0;
+	}
 	// if only one node 
 	if(q->head->next == NULL) {
 		if(q->head->id != id) return 0;
 
 		free(q->head);
 		q->head = q->tail = NULL;
+		q->size--;
 		return 1;
 	}
 
 	Node *cur = q->head;
 	Node *prev = NULL;
 	while(cur){
+		assert(cur->id);
 		if(cur->id == id) break;
 		prev = cur;
 		cur = cur->next;
@@ -99,6 +104,7 @@ int q_remove(Queue *q, Tid id){
 	if(cur == q->head && prev == NULL){
 		q->head = q->head->next;
 		free(cur);
+		q->size--;
 		return 1;
 	}
 
@@ -107,11 +113,13 @@ int q_remove(Queue *q, Tid id){
 		q->tail = prev; // if we're gonna remove the tail then move it one back
 		q->tail->next = NULL; 
 		free(cur);
+		q->size--;
 		return 1;
 	}
 
 	prev->next = cur->next;
 	free(cur);
+	q->size--;
 	return 1;
 }
 
@@ -239,6 +247,9 @@ thread_yield(Tid want_tid)
 
 	// add the current running queue to the end of the ready_q
 	q_add(ready_q, t_running);
+	// remove the now running thead from the ready_q
+	if(!q_remove(ready_q, want_tid))
+		printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
 
 	t_running = want_tid;
 	THREADS[t_running]->setcontext_called = 1;
