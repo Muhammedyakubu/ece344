@@ -48,17 +48,23 @@ Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
 // returns the top node from a queue
 Tid q_pop(Queue *q);
+
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
 void q_remove(Queue *q, Tid id);
+
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
+
 void q_print(Queue *q);
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
+
 // checks if a thread id is valid
-static inline int t_invalid(Tid id) {return (id < -2 || id >= THREAD_MAX_THREADS) || (id > 0 && ( THREADS[id] == NULL || THREADS[id]->state == DEAD));}
+static inline int t_invalid(Tid id) {
+	return (id < -2 || id >= THREAD_MAX_THREADS) || (id > 0 && ( THREADS[id] == NULL || THREADS[id]->state == DEAD));
+}
 
 /* IMPLEMENTING HELPERS */
 Tid q_pop(Queue *q){
@@ -247,7 +253,6 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
-	printf("CREATE: thread %d\n", t->id);
 	return t->id;
 }
 
@@ -258,8 +263,8 @@ thread_yield(Tid want_tid)
 		return THREAD_INVALID;
 	}
 
-	printf("readyq %p; before yield to %d: ", ready_q, want_tid);
-	q_print(ready_q);
+	// printf("readyq %p; before yield to %d: ", ready_q, want_tid);
+	// q_print(ready_q);
 
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
@@ -268,8 +273,8 @@ thread_yield(Tid want_tid)
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		q_remove(ready_q, want_tid);
-		printf("readyq after removing %d: ", want_tid);
-		q_print(ready_q);
+		// printf("readyq after removing %d: ", want_tid);
+		// q_print(ready_q);
 		return t_running;
 	}
 
@@ -290,8 +295,8 @@ thread_yield(Tid want_tid)
 	q_remove(ready_q, want_tid);
 		// printf("DEBUG: thread %d was not in the ready_q\n", want_tid);
 	
-	printf("DEBUG: thread %d yielding to thread %d\n", thread_id(), want_tid);
-	printf("readyq after yield: "); q_print(ready_q);
+	// printf("DEBUG: thread %d yielding to thread %d\n", thread_id(), want_tid);
+	// printf("readyq after yield: "); q_print(ready_q);
 	t_running = want_tid;
 	THREADS[t_running]->setcontext_called = 1;
 	THREADS[t_running]->state = RUNNING;
