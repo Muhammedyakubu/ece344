@@ -252,7 +252,7 @@ hello(char *msg)
 	Tid ret;
 	char str[20];
 
-	printf("thread %d -> message: %s\n", thread_id(), msg);
+	printf("message: %s\n", msg);
 	ret = thread_yield(THREAD_SELF);
 	assert(thread_ret_ok(ret));
 	printf("thread returns from  first yield\n");

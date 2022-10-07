@@ -1,8 +1,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <stdbool.h>
 #include "thread.h"
 #include "interrupt.h"
+#include "queue.h"
 
 // enum for thread states
 enum { 
@@ -18,7 +20,6 @@ struct wait_queue {
 
 /* This is the thread control block */
 typedef struct thread {
-	/* ... Fill this in ... */
 	Tid id;	
 	int setcontext_called;
 	int state;
@@ -26,16 +27,7 @@ typedef struct thread {
 	void* stack_base;
 } Thread;
 
-/* queue data structure */
-typedef struct node {
-	Tid id;
-	struct node *next;
-} Node;
 
-typedef struct queue {
-	Node *head;
-	int size;
-} Queue;
 
 /* GLOBALS */
 
@@ -45,15 +37,6 @@ Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
 /* HELPERS */
-
-// returns the top node from a queue
-Tid q_pop(Queue *q);
-// remove thread with Tid tid from the queue. 
-// returns 1 if successful and 0 if there were no matching threads in the queue
-int q_remove(Queue *q, Tid id);
-// adds a new node with Tid tid to the END of Queue q
-void q_add(Queue *q, Tid id);
-void q_print(Queue *q);
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
