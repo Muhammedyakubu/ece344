@@ -10,6 +10,7 @@
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
 #endif
+int debug = 1;
 
 // enum for thread states
 enum { 
@@ -80,8 +81,9 @@ Tid q_pop(Queue *q){
 	}
 
 	Node *old_head = q->head;
-	// doesn't matter if head is null
 	q->head = q->head->next;
+
+	if (q->head == NULL) q->tail = NULL;
 
 	Tid ret = old_head->id;
 	free(old_head);
@@ -113,6 +115,7 @@ bool q_remove(Queue *q, Tid id){
 	prev->next = cur->next;
 	free(cur);
 
+	if (debug) printf("removed %d from q\n", id);
 	q->size--;
 	return 1;
 }
@@ -203,9 +206,8 @@ thread_create(void (*fn) (void *), void *parg)
 		return THREAD_NOMORE;
 	}
 
-	// create the thread:
+	// create the thread && allocate stack space:
 	Thread *t = (Thread *)malloc(sizeof(Thread));
-	// 	allocate stack space 
 	void *stack = malloc(sizeof(THREAD_MIN_STACK));
 
 	if (!t || !stack) {
@@ -235,10 +237,14 @@ thread_create(void (*fn) (void *), void *parg)
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
 	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (rsp); 
 
+	t->context.uc_stack.ss_sp = stack;
+	t->context.uc_stack.ss_size = THREAD_MIN_STACK;
+
 #ifdef DEBUG_USE_VALGRIND
 	unsigned valgrind_register_retval = VALGRIND_STACK_REGISTER(rsp - THREAD_MIN_STACK, rsp);
 	assert(valgrind_register_retval);
 #endif
+
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
@@ -258,9 +264,14 @@ thread_yield(Tid want_tid)
 		if (want_tid == THREAD_NONE) return THREAD_NONE;
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
-		q_remove(ready_q, want_tid);
+		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
+		if (debug) q_print(ready_q);
+		
+		q_remove(ready_q, t_running);
 		return t_running;
 	}
+
+	if (debug) printf("Thread %d -> %d\n", thread_id(), want_tid);
 
 	// volatile forces this variable unto the caller's stack
 	volatile int setcontext_called = 0;
@@ -271,6 +282,8 @@ thread_yield(Tid want_tid)
 	assert(getcontext(&THREADS[t_running]->context) == 0);
 
 	if (setcontext_called){
+		if (debug) printf("Thread %d returning from yield to %d\n", thread_id(), want_tid);
+		
 		return want_tid;
 	}
 
