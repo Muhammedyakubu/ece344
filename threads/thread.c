@@ -315,7 +315,7 @@ thread_exit(int exit_code)
 {
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
-	if (ready_q->size == 0 || t_running == 0) {
+	if (ready_q->size == 0) {
 		exit(exit_code);
 	}
 	thread_yield(THREAD_ANY);

@@ -1,15 +1,15 @@
 main: setcontext_called = 0
-start = 0x5642d23d1000
-end = 0x5642d23d6000
+start = 0x5638e3e77000
+end = 0x5638e3e7c000
 ucontext_t size = 968 bytes
-memory address of main() = 0x5642d23d13be
-memory address of the program counter (RIP) saved in mycontext = 0x5642d23d13e0
+memory address of main() = 0x5638e3e773be
+memory address of the program counter (RIP) saved in mycontext = 0x5638e3e773e0
 argc = 1
-argv = 0x7ffe75044a18
-memory address of the variable setcontext_called = 0x7ffe7504490c
-memory address of the variable err = 0x7ffe75044908
+argv = 0x7ffc561e6418
+memory address of the variable setcontext_called = 0x7ffc561e630c
+memory address of the variable err = 0x7ffc561e6308
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffe750448f0
+stack pointer register (RSP) stored in mycontext = 0x7ffc561e62f0
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
@@ -420,3 +420,5 @@ testing destroy self
 mallinfo_check: memory use ok
 for my grand finale, I will destroy myself
 while my talented assistant prints "basic test done"
+finale running
+basic test done
