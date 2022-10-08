@@ -210,7 +210,7 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// create the thread && allocate stack space:
 	Thread *t = (Thread *)malloc(sizeof(Thread));
-	void *stack = malloc(THREAD_MIN_STACK);
+	void *stack = malloc(THREAD_MIN_STACK+24);
 
 	if (!t || !stack) {
 		return THREAD_NOMEMORY;	
@@ -222,25 +222,14 @@ thread_create(void (*fn) (void *), void *parg)
 	t->state = READY;
 	t->stack_base = stack;
 	assert(getcontext(&t->context) == 0);
-
-	// make sure sp is aligned to 16 bits
-	void *top_stack = t->stack_base + THREAD_MIN_STACK;
-	int offset = (long long int) top_stack % 16;
-	if (offset < 8) {
-		offset = 8 + offset;
-	} else {
-		offset = offset - 8;
-	}
-	void* rsp = top_stack - offset;
 	
 	// 	set rip, rsp, rsi & rdi GREGS
 	t->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_stub;
 	t->context.uc_mcontext.gregs[REG_RDI] = (greg_t) fn;	// run function
 	t->context.uc_mcontext.gregs[REG_RSI] = (greg_t) parg;
-	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (rsp); 
-
-	t->context.uc_stack.ss_sp = stack;
-	t->context.uc_stack.ss_size = THREAD_MIN_STACK;
+	t->context.uc_mcontext.gregs[REG_RSP] = (greg_t) (
+		t->stack_base + THREAD_MIN_STACK - 8 - (greg_t)stack%16
+	); 
 
 #ifdef DEBUG_USE_VALGRIND
 	unsigned valgrind_register_retval = VALGRIND_STACK_REGISTER(rsp - THREAD_MIN_STACK, rsp);
