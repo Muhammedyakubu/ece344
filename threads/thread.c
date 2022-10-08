@@ -77,6 +77,10 @@ void q_print(Queue *q);
 // free space for dead/exited threads
 void t_clean_dead_threads();
 
+static inline bool t_in_range(Tid tid) {
+	return tid >= 0 && tid < THREAD_MAX_THREADS;
+}
+
 // checks if a thread id is valid
 static inline int t_invalid(Tid id) {
 	return (id < -2 || id >= THREAD_MAX_THREADS) || (id > 0 && ( THREADS[id] == NULL || THREADS[id]->state == DEAD));
@@ -320,7 +324,8 @@ thread_exit(int exit_code)
 Tid
 thread_kill(Tid tid)
 {
-	if (tid < 0 || tid >= THREAD_MAX_THREADS || tid == t_running) {
+	t_clean_dead_threads();
+	if (t_invalid(tid) || tid == t_running) {
 		return THREAD_INVALID;
 	}
 	THREADS[tid]->state = DEAD;
@@ -328,6 +333,8 @@ thread_kill(Tid tid)
 	// set thread to run thread_exit with code 9
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_exit;
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RDI] = (greg_t) 9;
+
+
 	return tid;
 }
 
