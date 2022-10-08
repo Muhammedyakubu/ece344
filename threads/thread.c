@@ -6,11 +6,11 @@
 #include "interrupt.h"
 
 // #define DEBUG_USE_VALGRIND
+int debug = 1;
 
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
 #endif
-int debug = 0;
 
 // enum for thread states
 enum { 
@@ -39,14 +39,16 @@ typedef struct node {
 } Node;
 
 typedef struct queue {
-	Node *head, *tail;
-	int size;
+    int head, tail;
+    int size;
+    Tid array[THREAD_MAX_THREADS];
 } Queue;
 
 /* GLOBALS */
 
 Tid t_running;	// houses the currently running thread for quick access
-Queue ready_queue = {NULL, NULL, 0};
+// Queue ready_queue = {NULL, NULL, 0};
+Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
 Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
@@ -74,84 +76,75 @@ static inline int t_invalid(Tid id) {
 
 /* IMPLEMENTING HELPERS */
 
-Tid q_pop(Queue *q){
-	if (q->head == NULL) {
-		assert(q->tail == NULL);
-		return THREAD_NONE;
+Tid q_pop(Queue *q) {
+	if (debug) {
+		printf("q_pop: ");
+		q_print(q);
 	}
-
-	Node *old_head = q->head;
-	q->head = q->head->next;
-
-	if (q->head == NULL) q->tail = NULL;
-
-	Tid ret = old_head->id;
-	free(old_head);
-	q->size--;
-	return ret;
+    if (q->size == 0) {
+        return THREAD_NONE;
+    }
+    Tid id = q->array[q->head];
+    q->head = (q->head + 1) % THREAD_MAX_THREADS;
+    q->size--;
+    return id;
 }
 
-bool q_remove(Queue *q, Tid id){
-	if(!q->head) return 0;
-
-	Node *prev = NULL, *cur = q->head;
-
-	while(cur && cur->id != id) {
-		prev = cur;
-		cur = cur->next;
+bool q_remove(Queue *q, Tid id) {
+	if (debug) {
+		printf("q_remove %d: ", id);
+		q_print(q);
 	}
+    if (q->size == 0) {
+        return false;
+    }
+    int i = q->head;
+    while (i != q->tail) {
+        if (q->array[i] == id) {
+            q->array[i] = THREAD_NONE;
+            q->size--;
 
-	// we don't find the id in the list
-	if (cur == NULL) return 0;
+			// shift all elements after id to the left
+			int j = i;
+			while (j != q->tail) {
+				q->array[j] = q->array[(j + 1) % THREAD_MAX_THREADS];
+				j = (j + 1) % THREAD_MAX_THREADS;
+			}
+			q->tail = (q->tail - 1) % THREAD_MAX_THREADS;
+			q->array[q->tail] = THREAD_NONE;
+			
+            return true;
+        }
+        i = (i + 1) % THREAD_MAX_THREADS;
+    }
 
-	if (prev == NULL) {
-		// remove head, return a truthy value
-		return q_pop(q) + 1;
-	}
-
-	if (cur == q->tail) {
-		q->tail = prev;
-	}
-	prev->next = cur->next;
-	free(cur);
-
-	if (debug) printf("removed %d from q\n", id);
-	q->size--;
-	return 1;
+	return false;
 }
 
-void q_add(Queue *q, Tid id){
-	assert(id >= 0); // having some weird memory corruption bugs 
-
-	q->size++;
-
-	Node *new = (Node *)malloc(sizeof(Node));
-	assert(new);
-	new->id = id;
-	new->next = NULL;
-
-	if (q->head == NULL) {
-		q->head = q->tail = new;
+void q_add(Queue *q, Tid id) {
+    if (q->size == THREAD_MAX_THREADS) {
+        return;
+    }
+    q->array[q->tail] = id;
+    q->tail = (q->tail + 1) % THREAD_MAX_THREADS;
+    q->size++;
+	if (debug) {
+		printf("q_add %d: ", id);
+		q_print(q);
 	}
-	else {
-		assert(q->tail && q->head); // these are either both present or absent
-		q->tail->next = new;
-		q->tail = new;
-		return;
-	}
-
 }
 
-void q_print(Queue *q){
-	Node *cur = q->head;
-	int hitcount = 0;
-	while(cur){
-		printf("%p:%d->", cur, cur->id);
-		cur = cur->next;
-		hitcount++;
-	}
+void q_print(Queue *q) {
+    if (q->size == 0) {
+        printf("Queue is empty\n");
+        return;
+    }
+    int i = q->head;
+    while (i != q->tail) {
+        printf("%d->", q->array[i]);
+        i = (i + 1) % THREAD_MAX_THREADS;
+    }
 	printf("NULL\n");
-	return;
 }
 
 
@@ -257,6 +250,8 @@ thread_yield(Tid want_tid)
 	if(t_invalid(want_tid)) {
 		return THREAD_INVALID;
 	}
+	
+	if (debug) printf("Thread %d yields -> %d\n", thread_id(), want_tid);
 
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
@@ -265,13 +260,10 @@ thread_yield(Tid want_tid)
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
-		if (debug) q_print(ready_q);
 		
 		q_remove(ready_q, t_running);
 		return t_running;
 	}
-
-	if (debug) printf("Thread %d -> %d\n", thread_id(), want_tid);
 
 	// volatile forces this variable unto the caller's stack
 	volatile int setcontext_called = 0;
