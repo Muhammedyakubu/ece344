@@ -6,7 +6,13 @@
 #include "interrupt.h"
 
 // #define DEBUG_USE_VALGRIND
-int debug = 1;
+int debug = 0;
+// #define DEBUG
+// #ifdef DEBUG
+// int debug = 1;
+// #else
+// int debug = 0;
+// #endif
 
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
@@ -204,7 +210,7 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// create the thread && allocate stack space:
 	Thread *t = (Thread *)malloc(sizeof(Thread));
-	void *stack = malloc(sizeof(THREAD_MIN_STACK));
+	void *stack = malloc(THREAD_MIN_STACK);
 
 	if (!t || !stack) {
 		return THREAD_NOMEMORY;	
