@@ -1,15 +1,15 @@
 main: setcontext_called = 0
-start = 0x55dd8af31000
-end = 0x55dd8af36000
+start = 0x56213e63c000
+end = 0x56213e641000
 ucontext_t size = 968 bytes
-memory address of main() = 0x55dd8af313be
-memory address of the program counter (RIP) saved in mycontext = 0x55dd8af313e0
+memory address of main() = 0x56213e63c3be
+memory address of the program counter (RIP) saved in mycontext = 0x56213e63c3e0
 argc = 1
-argv = 0x7ffea3312f48
-memory address of the variable setcontext_called = 0x7ffea3312e3c
-memory address of the variable err = 0x7ffea3312e38
+argv = 0x7ffd1cfd9a88
+memory address of the variable setcontext_called = 0x7ffd1cfd997c
+memory address of the variable err = 0x7ffd1cfd9978
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffea3312e20
+stack pointer register (RSP) stored in mycontext = 0x7ffd1cfd9960
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
@@ -415,3 +415,5 @@ creating  1023 threads
 running   1023 threads
 creating  1023 threads
 destroying 512 threads
+testing some destroys even though I'm the only thread
+test_basic: test_thread.c:203: test_basic: Assertion `ret == THREAD_INVALID' failed.

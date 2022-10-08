@@ -267,15 +267,14 @@ thread_yield(Tid want_tid)
 
 	// get the wanted thread
 	if (want_tid == THREAD_ANY) {
-		want_tid = q_pop(ready_q);
-		if (want_tid == THREAD_NONE) return THREAD_NONE;
+		do {
+			want_tid = q_pop(ready_q);
+			if (want_tid == THREAD_NONE) return THREAD_NONE;
+		} while (THREADS[want_tid] == NULL || THREADS[want_tid]->state == DEAD);
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
 		q_remove(ready_q, t_running);
-		if (THREADS[t_running]->state == DEAD) {
-			thread_yield(THREAD_ANY);
-		}
 		return t_running;
 	}
 
@@ -286,6 +285,7 @@ thread_yield(Tid want_tid)
 	if (THREADS[t_running]->state != DEAD) {
 		THREADS[t_running]->state = READY;
 		q_add(ready_q, t_running);
+		t_clean_dead_threads();
 		// could free dead threads here?
 	}
 	assert(getcontext(&THREADS[t_running]->context) == 0);
