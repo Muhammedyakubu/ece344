@@ -281,8 +281,10 @@ thread_yield(Tid want_tid)
 	volatile int setcontext_called = 0;
 
 	// change states for caller & save its context
-	THREADS[t_running]->state = READY;
-	q_add(ready_q, t_running);
+	if (THREADS[t_running]->state != DEAD) {
+		THREADS[t_running]->state = READY;
+		q_add(ready_q, t_running);
+	}
 	assert(getcontext(&THREADS[t_running]->context) == 0);
 
 	if (setcontext_called){
@@ -306,7 +308,7 @@ thread_exit(int exit_code)
 {
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
-	if (ready_q->size == 0) {
+	if (ready_q->size == 0 || t_running == 0) {
 		exit(exit_code);
 	}
 	thread_yield(THREAD_ANY);
