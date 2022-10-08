@@ -246,7 +246,7 @@ thread_create(void (*fn) (void *), void *parg)
 	); 
 
 #ifdef DEBUG_USE_VALGRIND
-	unsigned valgrind_register_retval = VALGRIND_STACK_REGISTER(rsp - THREAD_MIN_STACK, rsp);
+	unsigned valgrind_register_retval = VALGRIND_STACK_REGISTER(t->context.uc_mcontext.gregs[REG_RSP] - THREAD_MIN_STACK, t->context.uc_mcontext.gregs[REG_RSP]);
 	assert(valgrind_register_retval);
 #endif
 
@@ -272,8 +272,10 @@ thread_yield(Tid want_tid)
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
-		
 		q_remove(ready_q, t_running);
+		if (THREADS[t_running]->state == DEAD) {
+			thread_yield(THREAD_ANY);
+		}
 		return t_running;
 	}
 
