@@ -12,6 +12,8 @@ int debug = 1;
 #include <valgrind.h>
 #endif
 
+#define str(x) #x
+
 // enum for thread states
 enum { 
 	READY = 0,
@@ -77,24 +79,20 @@ static inline int t_invalid(Tid id) {
 /* IMPLEMENTING HELPERS */
 
 Tid q_pop(Queue *q) {
-	if (debug) {
-		printf("q_pop: ");
-		q_print(q);
-	}
     if (q->size == 0) {
         return THREAD_NONE;
     }
     Tid id = q->array[q->head];
     q->head = (q->head + 1) % THREAD_MAX_THREADS;
     q->size--;
+	if (debug) {
+		printf("%s(): ", __func__);
+		q_print(q);
+	}
     return id;
 }
 
 bool q_remove(Queue *q, Tid id) {
-	if (debug) {
-		printf("q_remove %d: ", id);
-		q_print(q);
-	}
     if (q->size == 0) {
         return false;
     }
@@ -112,6 +110,11 @@ bool q_remove(Queue *q, Tid id) {
 			}
 			q->tail = (q->tail - 1) % THREAD_MAX_THREADS;
 			q->array[q->tail] = THREAD_NONE;
+
+			if (debug) {
+				printf("%s(%d): ", __func__, id);
+				q_print(q);
+			}
 			
             return true;
         }
@@ -129,7 +132,7 @@ void q_add(Queue *q, Tid id) {
     q->tail = (q->tail + 1) % THREAD_MAX_THREADS;
     q->size++;
 	if (debug) {
-		printf("q_add %d: ", id);
+		printf("%s(%d): ", __func__, id);
 		q_print(q);
 	}
 }
