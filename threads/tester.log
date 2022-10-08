@@ -1,15 +1,15 @@
 main: setcontext_called = 0
-start = 0x557529d98000
-end = 0x557529d9d000
+start = 0x558f0f613000
+end = 0x558f0f618000
 ucontext_t size = 968 bytes
-memory address of main() = 0x557529d983be
-memory address of the program counter (RIP) saved in mycontext = 0x557529d983e0
+memory address of main() = 0x558f0f6133be
+memory address of the program counter (RIP) saved in mycontext = 0x558f0f6133e0
 argc = 1
-argv = 0x7ffe0886f1c8
-memory address of the variable setcontext_called = 0x7ffe0886f0bc
-memory address of the variable err = 0x7ffe0886f0b8
+argv = 0x7ffe2efd6468
+memory address of the variable setcontext_called = 0x7ffe2efd635c
+memory address of the variable err = 0x7ffe2efd6358
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffe0886f0a0
+stack pointer register (RSP) stored in mycontext = 0x7ffe2efd6340
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
@@ -412,4 +412,4 @@ thread returns from  first yield
 thread returns from second yield
 destroying all threads
 creating  1023 threads
-test_basic: test_thread.c:139: test_basic: Assertion `thread_ret_ok(ret)' failed.
+running   1023 threads

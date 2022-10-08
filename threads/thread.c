@@ -284,6 +284,7 @@ thread_yield(Tid want_tid)
 	if (THREADS[t_running]->state != DEAD) {
 		THREADS[t_running]->state = READY;
 		q_add(ready_q, t_running);
+		// could free dead threads here?
 	}
 	assert(getcontext(&THREADS[t_running]->context) == 0);
 
@@ -295,8 +296,8 @@ thread_yield(Tid want_tid)
 
 	// sets up the changes for the wanted thread
 	q_remove(ready_q, want_tid);	
-	THREADS[t_running]->state = RUNNING;
 	t_running = want_tid;
+	THREADS[t_running]->state = RUNNING;
 	setcontext_called = 1;
 	assert(setcontext(&THREADS[t_running]->context) >= 0);
 
