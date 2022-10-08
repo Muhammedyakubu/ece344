@@ -1,15 +1,15 @@
 main: setcontext_called = 0
-start = 0x55e415a67000
-end = 0x55e415a6c000
+start = 0x5573539b2000
+end = 0x5573539b7000
 ucontext_t size = 968 bytes
-memory address of main() = 0x55e415a673ae
-memory address of the program counter (RIP) saved in mycontext = 0x55e415a673d0
+memory address of main() = 0x5573539b23be
+memory address of the program counter (RIP) saved in mycontext = 0x5573539b23e0
 argc = 1
-argv = 0x7ffe4ab2dc18
-memory address of the variable setcontext_called = 0x7ffe4ab2db0c
-memory address of the variable err = 0x7ffe4ab2db08
+argv = 0x7fff34223be8
+memory address of the variable setcontext_called = 0x7fff34223adc
+memory address of the variable err = 0x7fff34223ad8
 number of bytes pushed to the stack between setcontext_called and err = 4
-stack pointer register (RSP) stored in mycontext = 0x7ffe4ab2daf0
+stack pointer register (RSP) stored in mycontext = 0x7fff34223ac0
 number of bytes between err and the saved stack in mycontext = 24
 value of uc_stack.ss_sp = 0x0
 main: setcontext_called = 1
@@ -411,4 +411,3 @@ message: hello from thread 127
 thread returns from  first yield
 thread returns from second yield
 destroying all threads
-thread.c:309: thread_kill: please implement this functionality

@@ -89,6 +89,7 @@ Tid q_pop(Queue *q) {
         return THREAD_NONE;
     }
     Tid id = q->array[q->head];
+	q->array[q->head] = THREAD_NONE;
     q->head = (q->head + 1) % THREAD_MAX_THREADS;
     q->size--;
 	if (debug) {
@@ -157,6 +158,16 @@ void q_print(Queue *q) {
 }
 
 
+void t_clean_dead_threads(){
+	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
+		if (THREADS[i] != NULL && THREADS[i]->state == DEAD) {
+			free(THREADS[i]->stack_base);
+			free(THREADS[i]);
+			THREADS[i] = NULL;
+		}
+	}
+}
+
 /* THREAD LIBRARY FUNCTIONS */
 
 void
@@ -194,6 +205,9 @@ thread_stub(void (*thread_main)(void *), void *arg)
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+	// free dead threads
+	t_clean_dead_threads();
+
 	// check that we can make more threads
 	Tid tid = THREAD_MAX_THREADS;
 	for(int i = 0; i < THREAD_MAX_THREADS; ++i) {
@@ -290,14 +304,26 @@ thread_yield(Tid want_tid)
 void
 thread_exit(int exit_code)
 {
-	TBD();
+	THREADS[t_running]->state = DEAD;
+	q_remove(ready_q, t_running);
+	if (ready_q->size == 0) {
+		exit(exit_code);
+	}
+	thread_yield(THREAD_ANY);
 }
 
 Tid
 thread_kill(Tid tid)
 {
-	TBD();
-	return THREAD_FAILED;
+	if (tid < 0 || tid >= THREAD_MAX_THREADS || tid == t_running) {
+		return THREAD_INVALID;
+	}
+	THREADS[tid]->state = DEAD;
+
+	// set thread to run thread_exit with code 9
+	THREADS[tid]->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_exit;
+	THREADS[tid]->context.uc_mcontext.gregs[REG_RDI] = (greg_t) 9;
+	return tid;
 }
 
 /*******************************************************************
