@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/cad2/ece297s/public/bin/ece297vnc "$@"

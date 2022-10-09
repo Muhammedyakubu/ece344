@@ -1,18 +1,29 @@
 Failed to add the host to the list of known hosts (/homes/y/yakubumu/.ssh/known_hosts.d/ug250.eecg.utoronto.ca).
 cc -MM *.c > .depend
-cc -g -Wall -Werror    hi.c -lm  -o hi
-cc -g -Wall -Werror    hello.c -lm  -o hello
-cc -g -Wall -Werror    words.c -lm  -o words
-cc -g -Wall -Werror    fact.c -lm  -o fact
-cc -g -Wall -Werror   -c -o point.o point.c
-cc -g -Wall -Werror    test_point.c point.o -lm  -o test_point
-cc -g -Wall -Werror   -c -o wc.o wc.c
-cc -g -Wall -Werror    test_wc.c wc.o -lm  -o test_wc
-cc -g -Wall -Werror   -c -o cpr.o cpr.c
-cc   cpr.o -lm  -o cpr
-Running: /cad2/ece344f/tester/scripts/lab1-01-warmup.py 
-warmup test
-Mark for warmup test is 40 out of 40
+cc -g -Wall -Werror -D_GNU_SOURCE   -c -o test_thread.o test_thread.c
+cc -g -Wall -Werror -D_GNU_SOURCE   -c -o thread.o thread.c
+cc -g -Wall -Werror -D_GNU_SOURCE   -c -o interrupt.o interrupt.c
+cc -g -Wall -Werror -D_GNU_SOURCE    show_ucontext.c test_thread.o thread.o interrupt.o   -o show_ucontext
+cc -g -Wall -Werror -D_GNU_SOURCE    show_handler.c test_thread.o thread.o interrupt.o   -o show_handler
+cc -g -Wall -Werror -D_GNU_SOURCE    test_basic.c test_thread.o thread.o interrupt.o   -o test_basic
+cc -g -Wall -Werror -D_GNU_SOURCE    test_preemptive.c test_thread.o thread.o interrupt.o   -o test_preemptive
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wakeup.c test_thread.o thread.o interrupt.o   -o test_wakeup
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wakeup_all.c test_thread.o thread.o interrupt.o   -o test_wakeup_all
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wait.c test_thread.o thread.o interrupt.o   -o test_wait
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_kill.c test_thread.o thread.o interrupt.o   -o test_wait_kill
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_exited.c test_thread.o thread.o interrupt.o   -o test_wait_exited
+cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_parent.c test_thread.o thread.o interrupt.o   -o test_wait_parent
+cc -g -Wall -Werror -D_GNU_SOURCE    test_lock.c test_thread.o thread.o interrupt.o   -o test_lock
+cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_signal.c test_thread.o thread.o interrupt.o   -o test_cv_signal
+cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_broadcast.c test_thread.o thread.o interrupt.o   -o test_cv_broadcast
+Running: /cad2/ece344f/tester/scripts/lab2-01-ucontext.py 
+ucontext test
+Mark for ucontext test is 10 out of 10
 PASS
 
-You have received 40 marks out of a total of 40 marks.
+Running: /cad2/ece344f/tester/scripts/lab2-02-basic.py 
+basic test
+Mark for basic test is 44 out of 44
+PASS
+
+You have received 54 marks out of a total of 54 marks.
