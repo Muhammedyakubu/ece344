@@ -8,3 +8,6 @@ wakeup test, 2, 10
 wakeup test, 2, 10
 wakeup test, 10, 10
 wakeup all test, 6, 6
+preemptive test, 20, 20
+wakeup all test, 6, 6
+wakeup test, 10, 10

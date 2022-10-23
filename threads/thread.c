@@ -29,25 +29,28 @@ enum {
 	WAITING,
 };
 
-/* This is the thread control block */
-typedef struct thread {
-	Tid id;	
-	int state;
-	struct ucontext_t context;
-	void* stack_base;
-} Thread;
-
 /* queue data structure */
 typedef struct node {
 	Tid id;
 	struct node *next;
 } Node;
 
-typedef struct queue {
-    int head, tail;
+/* This is the wait queue structure */
+typedef struct wait_queue {
+	int head, tail;
     int size;
     Tid array[THREAD_MAX_THREADS];
 } Queue;
+
+/* This is the thread control block */
+typedef struct thread {
+	Tid id;	
+	int state;
+	struct ucontext_t context;
+	void* stack_base;
+	Queue *cur_q;	// pointer to the queue that the thread is currently in
+	Queue *wait_q;	// queue of threads waiting on this thread
+} Thread;
 
 // returns the top node from a queue
 Tid q_pop(Queue *q);
@@ -61,23 +64,6 @@ void q_add(Queue *q, Tid id);
 
 void q_print(Queue *q);
 
-/* This is the wait queue structure */
-typedef struct wait_queue {
-	int head, tail;
-    int size;
-    Tid array[THREAD_MAX_THREADS];
-} WaitQueue;
-
-Tid wq_pop(WaitQueue *q) {return q_pop((Queue*)q);}
-
-// remove thread with Tid tid from the queue. 
-// returns 1 if successful and 0 if there were no matching threads in the queue
-bool wq_remove(WaitQueue *q, Tid id) {return q_remove((Queue*)q, id);}
-
-// adds a new node with Tid tid to the END of Queue q
-void wq_add(WaitQueue *q, Tid id) {q_add((Queue*)q, id);}
-
-void wq_print(WaitQueue *q) {q_print((Queue*)q);}
 
 /* GLOBALS */
 
@@ -93,6 +79,7 @@ Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
+void thread_awaken(Tid tid);
 
 static inline bool t_in_range(Tid tid) {
 	return tid >= 0 && tid < THREAD_MAX_THREADS;
@@ -199,6 +186,7 @@ thread_init(void)
 	t->id = 0;
 	t->state = RUNNING;
 	t->stack_base = NULL;
+	t->cur_q = t->wait_q = NULL;
 	// initialize thread context
 	assert(getcontext(&t->context) == 0);
 
@@ -368,6 +356,8 @@ thread_kill(Tid tid)
 		interrupts_set(signals_enabled);
 		return THREAD_INVALID;
 	}
+
+	if (THREADS[tid]->state == SLEEPING) thread_awaken(tid);
 	THREADS[tid]->state = DEAD;
 
 	// set thread to run thread_exit with code 9
@@ -429,7 +419,7 @@ thread_sleep(struct wait_queue *queue)
 	}
 	
 	THREADS[thread_id()]->state = SLEEPING;
-	wq_add(queue, thread_id());
+	q_add(queue, thread_id());
 
 	// yield will return THREAD_NONE if there are no threads in the ready queue
 	interrupts_set(signals_enabled);
@@ -456,7 +446,7 @@ thread_wakeup(struct wait_queue *queue, int all)
 	}
 
 	while(all) {
-		Tid tid = wq_pop(queue);
+		Tid tid = q_pop(queue);
 		THREADS[tid]->state = READY;
 		q_add(ready_q, tid);
 		all--;
@@ -472,6 +462,22 @@ thread_wait(Tid tid, int *exit_code)
 {
 	TBD();
 	return 0;
+}
+
+void
+thread_awaken(Tid tid) {
+	int signals_enabled = interrupts_off();
+
+	if (t_invalid(tid) || THREADS[tid]->state != SLEEPING) {
+		interrupts_set(signals_enabled);
+		return;
+	}
+
+	THREADS[tid]->state = READY;
+	q_remove(THREADS[tid]->cur_q, tid);
+	q_add(ready_q, tid);
+
+	interrupts_set(signals_enabled);
 }
 
 struct lock {
