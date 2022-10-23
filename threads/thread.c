@@ -77,8 +77,6 @@ int THREAD_EXIT_STATUS[THREAD_MAX_THREADS] = {THREAD_INVALID};	// initialize exi
 
 /* HELPERS */
 
-
-
 // free space for dead/exited threads
 void t_clean_dead_threads();
 void thread_awaken(Tid tid);
@@ -178,7 +176,7 @@ void q_print(Queue *q) {
 
 void t_clean_dead_threads(){
 	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
-		if (THREADS[i] != NULL && THREADS[i]->state == DEAD) {
+		if (THREADS[i] != NULL && THREADS[i]->state == DEAD && i != t_running) {
 			free(THREADS[i]->stack_base);
 			wait_queue_destroy(THREADS[i]->wait_q);
 			free(THREADS[i]);
@@ -347,6 +345,7 @@ void
 thread_exit(int exit_code)
 {
 	int signals_enabled = interrupts_off();
+	t_clean_dead_threads();
 
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
