@@ -1,2 +1,6 @@
 ucontext test, 10, 10
 basic test, 44, 44
+preemptive test, 0, 20
+preemptive test, 0, 20
+preemptive test, 0, 20
+preemptive test, 20, 20

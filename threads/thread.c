@@ -202,6 +202,7 @@ thread_id()
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
+	interrupts_on();
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit(0);
 }
@@ -209,6 +210,8 @@ thread_stub(void (*thread_main)(void *), void *arg)
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+	int signals_enabled = interrupts_off();
+
 	// free dead threads
 	t_clean_dead_threads();
 
@@ -223,6 +226,7 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// if tid was not reassigned that means that we can't make more threads
 	if (tid == THREAD_MAX_THREADS) {
+		interrupts_set(signals_enabled);
 		return THREAD_NOMORE;
 	}
 
@@ -231,6 +235,7 @@ thread_create(void (*fn) (void *), void *parg)
 	void *stack = malloc(THREAD_MIN_STACK+24);
 
 	if (!t || !stack) {
+		interrupts_set(signals_enabled);
 		return THREAD_NOMEMORY;	
 	}
 
@@ -257,13 +262,17 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
+	
+	interrupts_set(signals_enabled);
 	return t->id;
 }
 
 Tid
 thread_yield(Tid want_tid)
 {
+	int signals_enabled = interrupts_off();
 	if(t_invalid(want_tid)) {
+		interrupts_set(signals_enabled);
 		return THREAD_INVALID;
 	}
 	
@@ -273,12 +282,17 @@ thread_yield(Tid want_tid)
 	if (want_tid == THREAD_ANY) {
 		do {
 			want_tid = q_pop(ready_q);
-			if (want_tid == THREAD_NONE) return THREAD_NONE;
+			if (want_tid == THREAD_NONE) {
+				interrupts_set(signals_enabled);
+				return THREAD_NONE;
+			}
 		} while (THREADS[want_tid] == NULL || THREADS[want_tid]->state == DEAD);
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
 		q_remove(ready_q, t_running);
+
+		interrupts_set(signals_enabled);
 		return t_running;
 	}
 
@@ -297,6 +311,7 @@ thread_yield(Tid want_tid)
 	if (setcontext_called){
 		if (debug) printf("Thread %d returning from yield to %d\n", thread_id(), want_tid);
 		
+		interrupts_set(signals_enabled);
 		return want_tid;
 	}
 
@@ -307,25 +322,33 @@ thread_yield(Tid want_tid)
 	setcontext_called = 1;
 	assert(setcontext(&THREADS[t_running]->context) >= 0);
 
+	// should never get here
 	return THREAD_FAILED;
 }
 
 void
 thread_exit(int exit_code)
 {
+	int signals_enabled = interrupts_off();
+
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
 	if (ready_q->size == 0) {
 		exit(exit_code);
 	}
+	// reenable interrupts before yielding
+	interrupts_set(signals_enabled);
 	thread_yield(THREAD_ANY);
 }
 
 Tid
 thread_kill(Tid tid)
 {
+	int signals_enabled = interrupts_off();
+
 	t_clean_dead_threads();
 	if (t_invalid(tid) || tid == t_running) {
+		interrupts_set(signals_enabled);
 		return THREAD_INVALID;
 	}
 	THREADS[tid]->state = DEAD;
@@ -334,7 +357,7 @@ thread_kill(Tid tid)
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_exit;
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RDI] = (greg_t) 9;
 
-
+	interrupts_set(signals_enabled);
 	return tid;
 }
 
