@@ -6,6 +6,8 @@
         "types.h": "c",
         "random": "c",
         "stdbool.h": "c",
-        "ios": "c"
+        "ios": "c",
+        "chrono": "c",
+        "algorithm": "c"
     }
 }

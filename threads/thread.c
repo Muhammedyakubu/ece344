@@ -24,12 +24,9 @@ int debug = 0;
 enum { 
 	READY = 0,
 	RUNNING,
-	DEAD
-};
-
-/* This is the wait queue structure */
-struct wait_queue {
-	/* ... Fill this in Lab 3 ... */
+	DEAD,
+	SLEEPING,
+	WAITING,
 };
 
 /* This is the thread control block */
@@ -52,16 +49,6 @@ typedef struct queue {
     Tid array[THREAD_MAX_THREADS];
 } Queue;
 
-/* GLOBALS */
-
-Tid t_running;	// houses the currently running thread for quick access
-// Queue ready_queue = {NULL, NULL, 0};
-Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
-Queue *ready_q = &ready_queue;
-Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
-
-/* HELPERS */
-
 // returns the top node from a queue
 Tid q_pop(Queue *q);
 
@@ -73,6 +60,36 @@ bool q_remove(Queue *q, Tid id);
 void q_add(Queue *q, Tid id);
 
 void q_print(Queue *q);
+
+/* This is the wait queue structure */
+typedef struct wait_queue {
+	int head, tail;
+    int size;
+    Tid array[THREAD_MAX_THREADS];
+} WaitQueue;
+
+Tid wq_pop(WaitQueue *q) {return q_pop((Queue*)q);}
+
+// remove thread with Tid tid from the queue. 
+// returns 1 if successful and 0 if there were no matching threads in the queue
+bool wq_remove(WaitQueue *q, Tid id) {return q_remove((Queue*)q, id);}
+
+// adds a new node with Tid tid to the END of Queue q
+void wq_add(WaitQueue *q, Tid id) {q_add((Queue*)q, id);}
+
+void wq_print(WaitQueue *q) {q_print((Queue*)q);}
+
+/* GLOBALS */
+
+Tid t_running;	// houses the currently running thread for quick access
+// Queue ready_queue = {NULL, NULL, 0};
+Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
+Queue *ready_q = &ready_queue;
+Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
+
+/* HELPERS */
+
+
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
@@ -299,8 +316,8 @@ thread_yield(Tid want_tid)
 	// volatile forces this variable unto the caller's stack
 	volatile int setcontext_called = 0;
 
-	// change states for caller & save its context
-	if (THREADS[t_running]->state != DEAD) {
+	// change states for VALID caller & save its context
+	if (THREADS[t_running]->state == RUNNING) {
 		THREADS[t_running]->state = READY;
 		q_add(ready_q, t_running);
 		t_clean_dead_threads();
@@ -369,28 +386,54 @@ thread_kill(Tid tid)
 struct wait_queue *
 wait_queue_create()
 {
+	int signals_enabled = interrupts_off();
 	struct wait_queue *wq;
 
 	wq = malloc(sizeof(struct wait_queue));
 	assert(wq);
 
-	TBD();
+	wq->head = wq->tail = wq->size = 0;
+	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
+		wq->array[i] = THREAD_NONE;
+	}
 
+	interrupts_set(signals_enabled);
 	return wq;
 }
 
 void
 wait_queue_destroy(struct wait_queue *wq)
 {
-	TBD();
+	int signals_enabled = interrupts_off();
+
+	assert(wq);
+	assert(wq->size == 0);
 	free(wq);
+
+	interrupts_set(signals_enabled);
 }
 
 Tid
 thread_sleep(struct wait_queue *queue)
 {
-	TBD();
-	return THREAD_FAILED;
+	int signals_enabled = interrupts_off();
+
+	// check validitiy of wait queue
+	if(queue == NULL) {
+		interrupts_set(signals_enabled);
+		return THREAD_INVALID;
+	}
+	if (ready_q->size == 0) {
+		interrupts_set(signals_enabled);
+		return THREAD_NONE;
+	}
+	
+	THREADS[thread_id()]->state = SLEEPING;
+	wq_add(queue, thread_id());
+
+	// yield will return THREAD_NONE if there are no threads in the ready queue
+	interrupts_set(signals_enabled);
+	return thread_yield(THREAD_ANY);
 }
 
 /* when the 'all' parameter is 1, wakeup all threads waiting in the queue.
@@ -398,8 +441,29 @@ thread_sleep(struct wait_queue *queue)
 int
 thread_wakeup(struct wait_queue *queue, int all)
 {
-	TBD();
-	return 0;
+	int signals_enabled = interrupts_off();
+	if (queue == NULL || queue->size == 0) {
+		interrupts_set(signals_enabled);
+		return 0;
+	}
+
+	int t_count;
+
+	if (all) {
+		t_count = all = queue->size;
+	} else {
+		t_count = all = 1;
+	}
+
+	while(all) {
+		Tid tid = wq_pop(queue);
+		THREADS[tid]->state = READY;
+		q_add(ready_q, tid);
+		all--;
+	}
+
+	interrupts_set(signals_enabled);
+	return t_count;
 }
 
 /* suspend current thread until Thread tid exits */

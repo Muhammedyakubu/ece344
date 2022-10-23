@@ -6041,3 +6041,31 @@ interrupt_handler: context at 0x7ffd4312c840, time diff = 203 us
 14: thread  50 passes potato at time = 59.929237
 cleaning hot potato
 preemptive test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
