@@ -11,3 +11,12 @@ wakeup all test, 6, 6
 preemptive test, 20, 20
 wakeup all test, 6, 6
 wakeup test, 10, 10
+wakeup test, 10, 10
+preemptive test, 20, 20
+wait test, 2, 14
+wait test, 11, 14
+wait test, 7, 14
+wait test, 11, 14
+wait test, 7, 14
+wait test, 11, 14
+wait test, 13, 14

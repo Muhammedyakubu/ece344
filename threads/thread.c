@@ -24,6 +24,7 @@ int debug = 0;
 enum { 
 	READY = 0,
 	RUNNING,
+	KILLED,
 	DEAD,
 	SLEEPING,
 	WAITING,
@@ -72,6 +73,7 @@ Tid t_running;	// houses the currently running thread for quick access
 Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
 Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
+int THREAD_EXIT_STATUS[THREAD_MAX_THREADS] = {THREAD_INVALID};	// initialize exit status array to 0
 
 /* HELPERS */
 
@@ -91,6 +93,14 @@ static inline int t_invalid(Tid id) {
 }
 
 /* IMPLEMENTING HELPERS */
+
+Queue *q_init() {
+	Queue *q = (Queue *)malloc(sizeof(Queue));
+	q->size = 0;
+	q->head = 0;
+	q->tail = 0;
+	return q;
+}
 
 Tid q_pop(Queue *q) {
     if (q->size == 0) {
@@ -170,6 +180,7 @@ void t_clean_dead_threads(){
 	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
 		if (THREADS[i] != NULL && THREADS[i]->state == DEAD) {
 			free(THREADS[i]->stack_base);
+			wait_queue_destroy(THREADS[i]->wait_q);
 			free(THREADS[i]);
 			THREADS[i] = NULL;
 		}
@@ -249,6 +260,7 @@ thread_create(void (*fn) (void *), void *parg)
 	t->id = tid;
 	t->state = READY;
 	t->stack_base = stack;
+	t->cur_q = t->wait_q = NULL;
 	assert(getcontext(&t->context) == 0);
 	
 	// 	set rip, rsp, rsi & rdi GREGS
@@ -338,9 +350,23 @@ thread_exit(int exit_code)
 
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
+
+	// store exit code
+	THREAD_EXIT_STATUS[t_running] = exit_code;
+
+	// wake up all threads waiting on this thread
+	if (THREADS[t_running]->wait_q) {
+		while (THREADS[t_running]->wait_q->size) {
+			Tid tid = q_pop(THREADS[t_running]->wait_q);
+			q_add(ready_q, tid);
+			// thread_awaken(tid);
+		}
+	}
+
 	if (ready_q->size == 0) {
 		exit(exit_code);
 	}
+
 	// reenable interrupts before yielding
 	interrupts_set(signals_enabled);
 	thread_yield(THREAD_ANY);
@@ -358,7 +384,7 @@ thread_kill(Tid tid)
 	}
 
 	if (THREADS[tid]->state == SLEEPING) thread_awaken(tid);
-	THREADS[tid]->state = DEAD;
+	THREADS[tid]->state = KILLED;
 
 	// set thread to run thread_exit with code 9
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_exit;
@@ -395,10 +421,10 @@ void
 wait_queue_destroy(struct wait_queue *wq)
 {
 	int signals_enabled = interrupts_off();
-
-	assert(wq);
-	assert(wq->size == 0);
-	free(wq);
+	if (wq) {
+		assert(wq->size == 0);
+		free(wq);
+	}
 
 	interrupts_set(signals_enabled);
 }
@@ -419,6 +445,7 @@ thread_sleep(struct wait_queue *queue)
 	}
 	
 	THREADS[thread_id()]->state = SLEEPING;
+	THREADS[thread_id()]->cur_q = queue;
 	q_add(queue, thread_id());
 
 	// yield will return THREAD_NONE if there are no threads in the ready queue
@@ -460,8 +487,31 @@ thread_wakeup(struct wait_queue *queue, int all)
 Tid
 thread_wait(Tid tid, int *exit_code)
 {
-	TBD();
-	return 0;
+	int signals_enabled = interrupts_off();
+
+	if (tid < 0 || tid >= THREAD_MAX_THREADS || THREADS[tid] == NULL || tid == t_running) {
+		interrupts_set(signals_enabled);
+		return THREAD_INVALID;
+	}
+
+	Tid ret;
+
+	if (THREADS[tid]->wait_q == NULL) {
+		THREADS[tid]->wait_q = wait_queue_create();
+		ret = tid;
+	} else {
+		ret = THREAD_INVALID;
+	}
+
+	thread_sleep(THREADS[tid]->wait_q);
+
+	if (ret != THREAD_INVALID) {
+		*exit_code = THREAD_EXIT_STATUS[tid];
+		THREAD_EXIT_STATUS[tid] = THREAD_INVALID;
+	}
+
+	interrupts_set(signals_enabled);
+	return ret;
 }
 
 void
