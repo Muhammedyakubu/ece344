@@ -6069,3 +6069,15 @@ starting wakeup test
 initial thread returns from sleep(NULL)
 initial thread returns from sleep(NONE)
 wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
+starting wakeup test
+initial thread returns from sleep(NULL)
+initial thread returns from sleep(NONE)
+wakeup test done
