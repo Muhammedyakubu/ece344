@@ -7,12 +7,6 @@
 
 // #define DEBUG_USE_VALGRIND
 int debug = 0;
-// #define DEBUG
-// #ifdef DEBUG
-// int debug = 1;
-// #else
-// int debug = 0;
-// #endif
 
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
@@ -55,21 +49,17 @@ typedef struct thread {
 
 // returns the top node from a queue
 Tid q_pop(Queue *q);
-
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
 bool q_remove(Queue *q, Tid id);
-
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
-
 void q_print(Queue *q);
 
 
 /* GLOBALS */
 
 Tid t_running;	// houses the currently running thread for quick access
-// Queue ready_queue = {NULL, NULL, 0};
 Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
 Queue *ready_q = &ready_queue;
 Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
@@ -92,12 +82,13 @@ static inline int t_invalid(Tid id) {
 
 /* IMPLEMENTING HELPERS */
 
-Queue *q_init() {
-	Queue *q = (Queue *)malloc(sizeof(Queue));
+void q_init(Queue *q) {
 	q->size = 0;
 	q->head = 0;
 	q->tail = 0;
-	return q;
+	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
+		q->array[i] = THREAD_NONE;
+	}
 }
 
 Tid q_pop(Queue *q) {
@@ -116,7 +107,7 @@ Tid q_pop(Queue *q) {
 }
 
 bool q_remove(Queue *q, Tid id) {
-    if (q->size == 0) {
+    if (q == NULL || q->size == 0) {
         return false;
     }
     int i = q->head;
@@ -258,7 +249,8 @@ thread_create(void (*fn) (void *), void *parg)
 	t->id = tid;
 	t->state = READY;
 	t->stack_base = stack;
-	t->cur_q = t->wait_q = NULL;
+	t->cur_q = ready_q;
+	t->wait_q = NULL;
 	assert(getcontext(&t->context) == 0);
 	
 	// 	set rip, rsp, rsi & rdi GREGS
@@ -504,7 +496,7 @@ thread_wait(Tid tid, int *exit_code)
 
 	thread_sleep(THREADS[tid]->wait_q);
 
-	if (ret != THREAD_INVALID) {
+	if (ret != THREAD_INVALID && exit_code != NULL) {
 		*exit_code = THREAD_EXIT_STATUS[tid];
 		THREAD_EXIT_STATUS[tid] = THREAD_INVALID;
 	}
@@ -531,97 +523,138 @@ thread_awaken(Tid tid) {
 
 struct lock {
 	/* ... Fill this in ... */
+	Tid owner;
+	Queue *queue;
 };
 
 struct lock *
 lock_create()
 {
+	int signals_enabled = interrupts_off();
 	struct lock *lock;
 
 	lock = malloc(sizeof(struct lock));
 	assert(lock);
 
-	TBD();
+	lock->owner = THREAD_NONE;
+	lock->queue = wait_queue_create();
 
+	interrupts_set(signals_enabled);
 	return lock;
 }
 
 void
 lock_destroy(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == THREAD_NONE);
+	assert(lock->queue->size == 0);
 
+	wait_queue_destroy(lock->queue);
 	free(lock);
+	interrupts_set(signals_enabled);
 }
 
 void
 lock_acquire(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
+	assert(lock->owner != thread_id());
 
-	TBD();
+	while (lock->owner != THREAD_NONE) {
+		thread_sleep(lock->queue);
+	}
+	 
+	lock->owner = thread_id();
+
+	interrupts_set(signals_enabled);
+	return;
 }
 
 void
 lock_release(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
+	assert(lock->owner == thread_id());
 
-	TBD();
+	if (lock->owner == thread_id()) {
+		lock->owner = THREAD_NONE;
+		thread_wakeup(lock->queue, 1);
+	}
+
+	interrupts_set(signals_enabled);
 }
 
 struct cv {
 	/* ... Fill this in ... */
+	Queue *queue;
 };
 
 struct cv *
 cv_create()
 {
+	int signals_enabled = interrupts_off();
 	struct cv *cv;
 
 	cv = malloc(sizeof(struct cv));
 	assert(cv);
 
-	TBD();
+	cv->queue = wait_queue_create();
 
+	interrupts_set(signals_enabled);
 	return cv;
 }
 
 void
 cv_destroy(struct cv *cv)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
+	assert(cv->queue->size == 0);
 
-	TBD();
-
+	wait_queue_destroy(cv->queue);
 	free(cv);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_wait(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	lock_release(lock);
+	thread_sleep(cv->queue);
+	lock_acquire(lock);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_signal(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	thread_wakeup(cv->queue, 0);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_broadcast(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	thread_wakeup(cv->queue, 1);
+	interrupts_set(signals_enabled);
 }
