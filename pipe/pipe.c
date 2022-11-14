@@ -115,5 +115,5 @@ int main(int argc, char *argv[]) {
 	}
 
   	
-	return EINVAL;
+	return 0;
 }
