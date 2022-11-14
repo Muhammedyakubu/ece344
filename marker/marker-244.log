@@ -1,79 +1,81 @@
 Failed to add the host to the list of known hosts (/homes/y/yakubumu/.ssh/known_hosts.d/ug250.eecg.utoronto.ca).
-cc -MM *.c > .depend
-cc -g -Wall -Werror -D_GNU_SOURCE   -c -o test_thread.o test_thread.c
-cc -g -Wall -Werror -D_GNU_SOURCE   -c -o thread.o thread.c
-cc -g -Wall -Werror -D_GNU_SOURCE   -c -o interrupt.o interrupt.c
-cc -g -Wall -Werror -D_GNU_SOURCE    show_ucontext.c test_thread.o thread.o interrupt.o   -o show_ucontext
-cc -g -Wall -Werror -D_GNU_SOURCE    show_handler.c test_thread.o thread.o interrupt.o   -o show_handler
-cc -g -Wall -Werror -D_GNU_SOURCE    test_basic.c test_thread.o thread.o interrupt.o   -o test_basic
-cc -g -Wall -Werror -D_GNU_SOURCE    test_preemptive.c test_thread.o thread.o interrupt.o   -o test_preemptive
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wakeup.c test_thread.o thread.o interrupt.o   -o test_wakeup
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wakeup_all.c test_thread.o thread.o interrupt.o   -o test_wakeup_all
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wait.c test_thread.o thread.o interrupt.o   -o test_wait
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_kill.c test_thread.o thread.o interrupt.o   -o test_wait_kill
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_exited.c test_thread.o thread.o interrupt.o   -o test_wait_exited
-cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_parent.c test_thread.o thread.o interrupt.o   -o test_wait_parent
-cc -g -Wall -Werror -D_GNU_SOURCE    test_lock.c test_thread.o thread.o interrupt.o   -o test_lock
-cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_signal.c test_thread.o thread.o interrupt.o   -o test_cv_signal
-cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_broadcast.c test_thread.o thread.o interrupt.o   -o test_cv_broadcast
-Running: /cad2/ece344f/tester/scripts/lab3-01-preemptive.py 
-preemptive test
-running 3 times
-INFO: test program claims it will take 60 seconds
-DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
-INFO: test program claims it will take 60 seconds
-DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
-INFO: test program claims it will take 60 seconds
-DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
-Mark for preemptive test is 20 out of 20
-PASS
+Running: /cad2/ece344f/tester/scripts/lab4-01-pipe.py 
+-- The C compiler identification is GNU 10.2.1
+-- The CXX compiler identification is GNU 10.2.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Python3: /usr/bin/python3.9 (found version "3.9.2") found components: Interpreter 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /nfs/ug/homes-0/y/yakubumu/ece344/marker/os-244/pipe/build
+Scanning dependencies of target pipe
+[ 50%] Building C object CMakeFiles/pipe.dir/pipe.c.o
+[100%] Linking C executable pipe
+[100%] Built target pipe
+Running tests...
+Test project /nfs/ug/homes-0/y/yakubumu/ece344/marker/os-244/pipe/build
+      Start  1: EmptyTest
+ 1/25 Test  #1: EmptyTest ........................   Passed    0.02 sec
+      Start  2: ExitFalseTest
+ 2/25 Test  #2: ExitFalseTest ....................   Passed    0.02 sec
+      Start  3: ExitInvalidTest
+ 3/25 Test  #3: ExitInvalidTest ..................   Passed    0.02 sec
+      Start  4: ExitFalseInvalidTest
+ 4/25 Test  #4: ExitFalseInvalidTest .............   Passed    0.02 sec
+      Start  5: ExitInvalidFalseTest
+ 5/25 Test  #5: ExitInvalidFalseTest .............   Passed    0.02 sec
+      Start  6: ChildrenOneTest
+ 6/25 Test  #6: ChildrenOneTest ..................   Passed    0.02 sec
+      Start  7: ChildrenTwoTest
+ 7/25 Test  #7: ChildrenTwoTest ..................   Passed    0.02 sec
+      Start  8: ChildrenThreeTest
+ 8/25 Test  #8: ChildrenThreeTest ................   Passed    0.02 sec
+      Start  9: ChildrenFourTest
+ 9/25 Test  #9: ChildrenFourTest .................   Passed    0.02 sec
+      Start 10: ChildrenFiveTest
+10/25 Test #10: ChildrenFiveTest .................   Passed    0.02 sec
+      Start 11: ChildrenSixTest
+11/25 Test #11: ChildrenSixTest ..................   Passed    0.02 sec
+      Start 12: ChildrenSevenTest
+12/25 Test #12: ChildrenSevenTest ................   Passed    0.02 sec
+      Start 13: ChildrenEightTest
+13/25 Test #13: ChildrenEightTest ................   Passed    0.02 sec
+      Start 14: ChildrenNineTest
+14/25 Test #14: ChildrenNineTest .................   Passed    0.02 sec
+      Start 15: ChildrenTenTest
+15/25 Test #15: ChildrenTenTest ..................   Passed    0.02 sec
+      Start 16: PipeOneTest
+16/25 Test #16: PipeOneTest ......................   Passed    0.02 sec
+      Start 17: PipeTwoTest
+17/25 Test #17: PipeTwoTest ......................   Passed    0.02 sec
+      Start 18: PipeThreeTest
+18/25 Test #18: PipeThreeTest ....................   Passed    0.02 sec
+      Start 19: PipeFourTest
+19/25 Test #19: PipeFourTest .....................   Passed    0.02 sec
+      Start 20: PipeFiveTest
+20/25 Test #20: PipeFiveTest .....................   Passed    0.02 sec
+      Start 21: PipeSixTest
+21/25 Test #21: PipeSixTest ......................   Passed    0.02 sec
+      Start 22: PipeSevenTest
+22/25 Test #22: PipeSevenTest ....................   Passed    0.02 sec
+      Start 23: PipeEightTest
+23/25 Test #23: PipeEightTest ....................   Passed    0.03 sec
+      Start 24: PipeNineTest
+24/25 Test #24: PipeNineTest .....................   Passed    0.03 sec
+      Start 25: StdinTest
+25/25 Test #25: StdinTest ........................   Passed    0.12 sec
 
-Running: /cad2/ece344f/tester/scripts/lab3-02-wakeup.py 
-wakeup test
-running 3 times
-Mark for wakeup test is 10 out of 10
-PASS
+100% tests passed, 0 tests failed out of 25
 
-Running: /cad2/ece344f/tester/scripts/lab3-03-wakeupall.py 
-wakeup all test
-running 3 times
-Mark for wakeup all test is 6 out of 6
-PASS
+Total Test time (real) =   0.72 sec
 
-Running: /cad2/ece344f/tester/scripts/lab3-04-wait.py 
-wait test
-running test_wait...
-running test_wait_kill...
-running test_wait_exited...
-running test_wait_parent...
-Mark for wait test is 14 out of 14
-PASS
-
-Running: /cad2/ece344f/tester/scripts/lab3-05-lock.py 
-lock test
-running 3 times
-    running trial 0
---> adding 2 mark clean return bonus
---> adding 2 mark wait_until_end bonus
-    running trial 1
---> adding 2 mark clean return bonus
---> adding 2 mark wait_until_end bonus
-    running trial 2
---> adding 2 mark clean return bonus
---> adding 2 mark wait_until_end bonus
-Mark for lock test is 14 out of 14
-PASS
-
-Running: /cad2/ece344f/tester/scripts/lab3-06-cv-signal.py 
-cv signal test
-running 3 times
-Mark for cv signal test is 14 out of 14
-PASS
-
-Running: /cad2/ece344f/tester/scripts/lab3-07-cv-broadcast.py 
-cv broadcast test
-running 3 times
-Mark for cv broadcast test is 12 out of 12
-PASS
-
-You have received 90 marks out of a total of 90 marks.
+You have received 100 marks out of a total of 100 marks.
+tester.log not found
