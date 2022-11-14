@@ -66,8 +66,8 @@ int main(int argc, char *argv[]) {
 			}
 
 			// exec proc
-			fprintf(stderr, "exec %s\n", argv[i]);
-			fflush(stderr);
+			// fprintf(stderr, "exec %s\n", argv[i]);
+			// fflush(stderr);
 
 			check_error(execlp(argv[i], argv[i], NULL), "execlp");
 		}
@@ -81,7 +81,9 @@ int main(int argc, char *argv[]) {
 	for (int i = 1; i < argc; ++i) {
 		check_error(wait(&status), "wait");
 		assert(WIFEXITED(status));
-		assert(WEXITSTATUS(status) == 0);
+		if (WEXITSTATUS(status) != 0) {
+			exit(WEXITSTATUS(status));
+		}
 	}
 
   	
