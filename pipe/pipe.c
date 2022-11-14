@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define check_error(expr, userMsg) \
+/* #define check_error(expr, userMsg) \
 	do { \
 		if (expr == -1) { \
 			perror(userMsg); \
@@ -13,14 +13,14 @@
 			exit(errno); \
 		} \
 	} while (0)
-
-// static void check_error(int ret, const char *msg) {
-//   if (ret == -1) {
-// 	int err = errno;
-// 	perror(msg);
-// 	exit(err);
-//   }
-// }
+ */
+static void check_error(int ret, const char *msg) {
+  if (ret == -1) {
+	int err = errno;
+	perror(msg);
+	exit(err);
+  }
+}
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 
 	int num_pipes = argc - 2;
 	int pipes[10][2] = {0};	// at least 10 pipes
+	int pid[10] = {0};		// at least 10 processes
 
 	// stdin -> argv[1] -> pipes[0][1] -> pipes[0][0] -> argv[2] -> pipes[1][1] -> pipes[1][0] -> argv[3] -> ... -> pipes[num_pipes-1][1] -> pipes[num_pipes-1][0] -> argv[argc-1] -> stdout
 
@@ -48,6 +49,7 @@ int main(int argc, char *argv[]) {
 
 		int child_pid = fork();
 		check_error(child_pid, "fork");
+		pid[i-1] = child_pid;
 
 		if (child_pid == 0) {
 			// child (proc)
@@ -58,7 +60,6 @@ int main(int argc, char *argv[]) {
 			int stdin_ = (i == 1) ? root_stdin : pipes[i-2][0];
 			// error checking
 			check_error(dup2(stdin_, STDIN_FILENO), "dup2");
-			// fprintf(stderr, "%d, %d, %d\n", stdin_, STDIN_FILENO, root_stdin);
 
 			// if last proc, set stdout to parent's stdout
 			// else set stdout to next proc's stdin
@@ -73,16 +74,6 @@ int main(int argc, char *argv[]) {
 			}
 			check_error(close(root_stdin), "close");
 			check_error(close(root_stdout), "close");
-			// for (int j = 0; j < num_pipes; j++) {
-			// 	if (pipes[j][0] != stdin_)
-			// 		check_error(close(pipes[j][0]), "close");
-			// 	if (pipes[j][1] != stdout_)
-			// 		check_error(close(pipes[j][1]), "close");
-			// }
-
-			// exec proc
-			// fprintf(stderr, "exec %s\n", argv[i]);
-			// fflush(stderr);
 
 			check_error(execlp(argv[i], argv[i], NULL), "execlp");
 		}
@@ -107,7 +98,7 @@ int main(int argc, char *argv[]) {
 	// wait for all children to finish
 	int status;
 	for (int i = 1; i < argc; ++i) {
-		check_error(wait(&status), "wait");
+		check_error(waitpid(pid[i-1], &status, 0), "wait");
 		// assert(WIFEXITED(status));
 		if (WEXITSTATUS(status) != 0) {
 			exit(WEXITSTATUS(status));
