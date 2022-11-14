@@ -24,15 +24,18 @@ int main(int argc, char *argv[]) {
 	int root_stdout = dup(STDOUT_FILENO);
 	check_error(root_stdout, "dup");
 
-	fprintf(stderr, "argc: %d\n", argc);
-	fprintf(stderr, "root's stdin: %d, stdout: %d\n", root_stdin, root_stdout);
-	fflush(stderr);
+	int num_pipes = argc - 2;
+	int pipes[10][2] = {0};	// at least 10 pipes
+
+	// stdin -> argv[1] -> pipes[0][1] -> pipes[0][0] -> argv[2] -> pipes[1][1] -> pipes[1][0] -> argv[3] -> ... -> pipes[num_pipes-1][1] -> pipes[num_pipes-1][0] -> argv[argc-1] -> stdout
+
+	// create pipes
+	for (int i = 0; i < num_pipes; i++) {
+		check_error(pipe(pipes[i]), "pipe");
+	}
 
 	// loop to create new procs and set their stdin to the previous proc's stdout
-	int pipefd[2];
 	for (int i = 1; i < argc; ++i) {
-		check_error(pipe(pipefd), "pipe");
-		fprintf(stderr, "pipefd: %d, %d\n", pipefd[0], pipefd[1]);
 
 		int child_pid = fork();
 		check_error(child_pid, "fork");
@@ -43,21 +46,24 @@ int main(int argc, char *argv[]) {
 
 			// if first proc, set stdin to parent's stdin
 			// else set stdin to previous proc's stdout
-			int stdin_ = (i == 1) ? root_stdin : pipefd[0];
+			int stdin_ = (i == 1) ? root_stdin : pipes[i-2][0];
 			// error checking
 			check_error(dup2(stdin_, STDIN_FILENO), "dup2");
+			// fprintf(stderr, "%d, %d, %d\n", stdin_, STDIN_FILENO, root_stdin);
 
 			// if last proc, set stdout to parent's stdout
 			// else set stdout to next proc's stdin
-			int stdout_ = (i == argc - 1) ? root_stdout : pipefd[1];
+			int stdout_ = (i == argc - 1) ? root_stdout : pipes[i-1][1];
 			// error checking
 			check_error(dup2(stdout_, STDOUT_FILENO), "dup2");
 
 			// should close other dangling fds in the child
-			check_error(close(root_stdin), "close");
-			check_error(close(root_stdout), "close");
-			check_error(close(pipefd[0]), "close");
-			check_error(close(pipefd[1]), "close");
+			for (int j = 0; j < num_pipes; j++) {
+				if (pipes[j][0] != stdin_)
+					check_error(close(pipes[j][0]), "close");
+				if (pipes[j][1] != stdout_)
+					check_error(close(pipes[j][1]), "close");
+			}
 
 			// exec proc
 			fprintf(stderr, "exec %s\n", argv[i]);
@@ -67,9 +73,6 @@ int main(int argc, char *argv[]) {
 		}
 
 		// parent (proc)
-		
-		check_error(close(pipefd[0]), "close");
-		check_error(close(pipefd[1]), "close");
 
 	}
 
@@ -77,6 +80,8 @@ int main(int argc, char *argv[]) {
 	int status;
 	for (int i = 1; i < argc; ++i) {
 		check_error(wait(&status), "wait");
+		assert(WIFEXITED(status));
+		assert(WEXITSTATUS(status) == 0);
 	}
 
   	
