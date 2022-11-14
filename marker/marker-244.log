@@ -16,14 +16,64 @@ cc -g -Wall -Werror -D_GNU_SOURCE    test_wait_parent.c test_thread.o thread.o i
 cc -g -Wall -Werror -D_GNU_SOURCE    test_lock.c test_thread.o thread.o interrupt.o   -o test_lock
 cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_signal.c test_thread.o thread.o interrupt.o   -o test_cv_signal
 cc -g -Wall -Werror -D_GNU_SOURCE    test_cv_broadcast.c test_thread.o thread.o interrupt.o   -o test_cv_broadcast
-Running: /cad2/ece344f/tester/scripts/lab2-01-ucontext.py 
-ucontext test
-Mark for ucontext test is 10 out of 10
+Running: /cad2/ece344f/tester/scripts/lab3-01-preemptive.py 
+preemptive test
+running 3 times
+INFO: test program claims it will take 60 seconds
+DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
+INFO: test program claims it will take 60 seconds
+DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
+INFO: test program claims it will take 60 seconds
+DONE: saw 0 interrupts disabled, 0 bad returns, 0 unexpected potato moves
+Mark for preemptive test is 20 out of 20
 PASS
 
-Running: /cad2/ece344f/tester/scripts/lab2-02-basic.py 
-basic test
-Mark for basic test is 44 out of 44
+Running: /cad2/ece344f/tester/scripts/lab3-02-wakeup.py 
+wakeup test
+running 3 times
+Mark for wakeup test is 10 out of 10
 PASS
 
-You have received 54 marks out of a total of 54 marks.
+Running: /cad2/ece344f/tester/scripts/lab3-03-wakeupall.py 
+wakeup all test
+running 3 times
+Mark for wakeup all test is 6 out of 6
+PASS
+
+Running: /cad2/ece344f/tester/scripts/lab3-04-wait.py 
+wait test
+running test_wait...
+running test_wait_kill...
+running test_wait_exited...
+running test_wait_parent...
+Mark for wait test is 14 out of 14
+PASS
+
+Running: /cad2/ece344f/tester/scripts/lab3-05-lock.py 
+lock test
+running 3 times
+    running trial 0
+--> adding 2 mark clean return bonus
+--> adding 2 mark wait_until_end bonus
+    running trial 1
+--> adding 2 mark clean return bonus
+--> adding 2 mark wait_until_end bonus
+    running trial 2
+--> adding 2 mark clean return bonus
+--> adding 2 mark wait_until_end bonus
+Mark for lock test is 14 out of 14
+PASS
+
+Running: /cad2/ece344f/tester/scripts/lab3-06-cv-signal.py 
+cv signal test
+running 3 times
+Mark for cv signal test is 14 out of 14
+PASS
+
+Running: /cad2/ece344f/tester/scripts/lab3-07-cv-broadcast.py 
+cv broadcast test
+running 3 times
+Mark for cv broadcast test is 12 out of 12
+PASS
+
+You have received 90 marks out of a total of 90 marks.

@@ -93,24 +93,23 @@ main(int argc, char **argv)
 	 * comment out TBD, and replace the -1 in each printf() with what is
 	 * expected to be printed.
 	 */
-
-	// TBD();
+	TBD();
 
 	/* show size of ucontext_t structure. Hint: use sizeof(). */
-	printf("ucontext_t size = %ld bytes\n", (long int)sizeof(mycontext));
+	printf("ucontext_t size = %ld bytes\n", (long int)-1);
 
 	/* now, look inside of the context you just saved. */
 
 	/* first, think about code */
 	/* the program counter is called rip in x86-64 */
-	printf("memory address of main() = 0x%lx\n", (unsigned long)main);
+	printf("memory address of main() = 0x%lx\n", (unsigned long)-1);
 	printf("memory address of the program counter (RIP) saved "
 	       "in mycontext = 0x%lx\n",
-	       (unsigned long)mycontext.uc_mcontext.gregs[REG_RIP]);
+	       (unsigned long)-1);
 
 	/* Now, think about parameters. */
-	printf("argc = %d\n", argc);
-	printf("argv = %p\n", (void *)argv);
+	printf("argc = %d\n", -1);
+	printf("argv = %p\n", (void *)-1);
 	/* QUESTIONS: How are these parameters passed into the main function? 
 	 * Are there any saved registers in mycontext that store the parameter
 	 * values above. Why or why not? Hint: Use gdb, and then run
@@ -121,27 +120,27 @@ main(int argc, char **argv)
 	/* Now, think about the stack. */
 	/* QUESTIONS: Are setcontext_called and err stored on the stack? 
 	 * Does the stack grow up or down? What stack-related data is stored in
-	 * mycontext.uc_mcontext.gregs[]? 	 
+	 * mycontext.uc_mcontext.gregs[]? 
 	 */
 	printf("memory address of the variable setcontext_called = %p\n",
-	       (void *)&setcontext_called);
+	       (void *)-1);
 	printf("memory address of the variable err = %p\n",
-	       (void *)&err);
+	       (void *)-1);
 	printf("number of bytes pushed to the stack between setcontext_called "
-	       "and err = %ld\n", (unsigned long)&setcontext_called - (unsigned long)&err);
+	       "and err = %ld\n", (unsigned long)-1);
 
 	printf("stack pointer register (RSP) stored in mycontext = 0x%lx\n",
-	       (unsigned long)mycontext.uc_mcontext.gregs[REG_RSP]);
+	       (unsigned long)-1);
 
 	printf("number of bytes between err and the saved stack in mycontext "
-	       "= %ld\n", (unsigned long)&err - (unsigned long)mycontext.uc_mcontext.gregs[REG_RSP]);
+	       "= %ld\n", (unsigned long)-1);
 
 	/* QUESTION: What is the value of the uc_stack field in mycontext?
 	 * Note that this field is used to store an alternate stack for use
 	 * during signal handling, and is NOT the stack of the running thread. 
 	 */
 	printf("value of uc_stack.ss_sp = 0x%lx\n",
-	       (unsigned long)mycontext.uc_stack.ss_sp);
+	       (unsigned long)-1);
 
 	/* Don't move on to the next part of the lab until you know how to
 	 * change the stack in a context when you manipulate a context to create
@@ -184,7 +183,7 @@ show_interrupt(void)
 	/* QUESTION: Are interrupts masked (i.e., disabled) in mycontext?
 	 * HINT: use sigismember below. */
 	printf("interrupt is disabled = %d\n",
-	       (unsigned int)sigismember(&mycontext.uc_sigmask, SIG_TYPE));
+	       (unsigned int)-1);
 
 	interrupts_off();
 
@@ -194,5 +193,5 @@ show_interrupt(void)
 	/* QUESTION: which fields of mycontext changed as a result of the
 	 * getcontext call above? */
 	printf("interrupt is disabled = %d\n",
-	       (unsigned int)sigismember(&mycontext.uc_sigmask, SIG_TYPE));
+	       (unsigned int)-1);
 }

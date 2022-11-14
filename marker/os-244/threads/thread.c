@@ -7,12 +7,6 @@
 
 // #define DEBUG_USE_VALGRIND
 int debug = 0;
-// #define DEBUG
-// #ifdef DEBUG
-// int debug = 1;
-// #else
-// int debug = 0;
-// #endif
 
 #ifdef DEBUG_USE_VALGRIND
 #include <valgrind.h>
@@ -24,21 +18,11 @@ int debug = 0;
 enum { 
 	READY = 0,
 	RUNNING,
-	DEAD
+	KILLED,
+	DEAD,
+	SLEEPING,
+	WAITING,
 };
-
-/* This is the wait queue structure */
-struct wait_queue {
-	/* ... Fill this in Lab 3 ... */
-};
-
-/* This is the thread control block */
-typedef struct thread {
-	Tid id;	
-	int state;
-	struct ucontext_t context;
-	void* stack_base;
-} Thread;
 
 /* queue data structure */
 typedef struct node {
@@ -46,36 +30,46 @@ typedef struct node {
 	struct node *next;
 } Node;
 
-typedef struct queue {
-    int head, tail;
+/* This is the wait queue structure */
+typedef struct wait_queue {
+	int head, tail;
     int size;
     Tid array[THREAD_MAX_THREADS];
 } Queue;
 
-/* GLOBALS */
-
-Tid t_running;	// houses the currently running thread for quick access
-// Queue ready_queue = {NULL, NULL, 0};
-Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
-Queue *ready_q = &ready_queue;
-Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
-
-/* HELPERS */
+/* This is the thread control block */
+typedef struct thread {
+	Tid id;	
+	int state;
+	struct ucontext_t context;
+	void* stack_base;
+	Queue *cur_q;	// pointer to the queue that the thread is currently in
+	Queue *wait_q;	// queue of threads waiting on this thread
+} Thread;
 
 // returns the top node from a queue
 Tid q_pop(Queue *q);
-
 // remove thread with Tid tid from the queue. 
 // returns 1 if successful and 0 if there were no matching threads in the queue
 bool q_remove(Queue *q, Tid id);
-
 // adds a new node with Tid tid to the END of Queue q
 void q_add(Queue *q, Tid id);
-
 void q_print(Queue *q);
+
+
+/* GLOBALS */
+
+Tid t_running;	// houses the currently running thread for quick access
+Queue ready_queue = {0, 0, 0, {THREAD_NONE}};
+Queue *ready_q = &ready_queue;
+Thread *THREADS[THREAD_MAX_THREADS] = {NULL};	// initialize thread array to NULL
+int THREAD_EXIT_STATUS[THREAD_MAX_THREADS] = {THREAD_INVALID};	// initialize exit status array to 0
+
+/* HELPERS */
 
 // free space for dead/exited threads
 void t_clean_dead_threads();
+void thread_awaken(Tid tid);
 
 static inline bool t_in_range(Tid tid) {
 	return tid >= 0 && tid < THREAD_MAX_THREADS;
@@ -87,6 +81,15 @@ static inline int t_invalid(Tid id) {
 }
 
 /* IMPLEMENTING HELPERS */
+
+void q_init(Queue *q) {
+	q->size = 0;
+	q->head = 0;
+	q->tail = 0;
+	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
+		q->array[i] = THREAD_NONE;
+	}
+}
 
 Tid q_pop(Queue *q) {
     if (q->size == 0) {
@@ -104,7 +107,7 @@ Tid q_pop(Queue *q) {
 }
 
 bool q_remove(Queue *q, Tid id) {
-    if (q->size == 0) {
+    if (q == NULL || q->size == 0) {
         return false;
     }
     int i = q->head;
@@ -164,8 +167,9 @@ void q_print(Queue *q) {
 
 void t_clean_dead_threads(){
 	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
-		if (THREADS[i] != NULL && THREADS[i]->state == DEAD) {
+		if (THREADS[i] != NULL && THREADS[i]->state == DEAD && i != t_running) {
 			free(THREADS[i]->stack_base);
+			wait_queue_destroy(THREADS[i]->wait_q);
 			free(THREADS[i]);
 			THREADS[i] = NULL;
 		}
@@ -182,6 +186,7 @@ thread_init(void)
 	t->id = 0;
 	t->state = RUNNING;
 	t->stack_base = NULL;
+	t->cur_q = t->wait_q = NULL;
 	// initialize thread context
 	assert(getcontext(&t->context) == 0);
 
@@ -202,6 +207,7 @@ thread_id()
 void
 thread_stub(void (*thread_main)(void *), void *arg)
 {
+	interrupts_on();
 	thread_main(arg); // call thread_main() function with arg
 	thread_exit(0);
 }
@@ -209,6 +215,8 @@ thread_stub(void (*thread_main)(void *), void *arg)
 Tid
 thread_create(void (*fn) (void *), void *parg)
 {
+	int signals_enabled = interrupts_off();
+
 	// free dead threads
 	t_clean_dead_threads();
 
@@ -223,6 +231,7 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// if tid was not reassigned that means that we can't make more threads
 	if (tid == THREAD_MAX_THREADS) {
+		interrupts_set(signals_enabled);
 		return THREAD_NOMORE;
 	}
 
@@ -231,6 +240,7 @@ thread_create(void (*fn) (void *), void *parg)
 	void *stack = malloc(THREAD_MIN_STACK+24);
 
 	if (!t || !stack) {
+		interrupts_set(signals_enabled);
 		return THREAD_NOMEMORY;	
 	}
 
@@ -239,6 +249,8 @@ thread_create(void (*fn) (void *), void *parg)
 	t->id = tid;
 	t->state = READY;
 	t->stack_base = stack;
+	t->cur_q = ready_q;
+	t->wait_q = NULL;
 	assert(getcontext(&t->context) == 0);
 	
 	// 	set rip, rsp, rsi & rdi GREGS
@@ -257,13 +269,17 @@ thread_create(void (*fn) (void *), void *parg)
 
 	// add new thread to ready queue
 	q_add(ready_q, t->id);
+	
+	interrupts_set(signals_enabled);
 	return t->id;
 }
 
 Tid
 thread_yield(Tid want_tid)
 {
+	int signals_enabled = interrupts_off();
 	if(t_invalid(want_tid)) {
+		interrupts_set(signals_enabled);
 		return THREAD_INVALID;
 	}
 	
@@ -273,20 +289,25 @@ thread_yield(Tid want_tid)
 	if (want_tid == THREAD_ANY) {
 		do {
 			want_tid = q_pop(ready_q);
-			if (want_tid == THREAD_NONE) return THREAD_NONE;
+			if (want_tid == THREAD_NONE) {
+				interrupts_set(signals_enabled);
+				return THREAD_NONE;
+			}
 		} while (THREADS[want_tid] == NULL || THREADS[want_tid]->state == DEAD);
 	} 
 	if (want_tid == THREAD_SELF || want_tid == t_running) {
 		if (debug) printf("Thread %d returning from yield to self\n", thread_id());
 		q_remove(ready_q, t_running);
+
+		interrupts_set(signals_enabled);
 		return t_running;
 	}
 
 	// volatile forces this variable unto the caller's stack
 	volatile int setcontext_called = 0;
 
-	// change states for caller & save its context
-	if (THREADS[t_running]->state != DEAD) {
+	// change states for VALID caller & save its context
+	if (THREADS[t_running]->state == RUNNING) {
 		THREADS[t_running]->state = READY;
 		q_add(ready_q, t_running);
 		t_clean_dead_threads();
@@ -297,6 +318,7 @@ thread_yield(Tid want_tid)
 	if (setcontext_called){
 		if (debug) printf("Thread %d returning from yield to %d\n", thread_id(), want_tid);
 		
+		interrupts_set(signals_enabled);
 		return want_tid;
 	}
 
@@ -307,34 +329,59 @@ thread_yield(Tid want_tid)
 	setcontext_called = 1;
 	assert(setcontext(&THREADS[t_running]->context) >= 0);
 
+	// should never get here
 	return THREAD_FAILED;
 }
 
 void
 thread_exit(int exit_code)
 {
+	int signals_enabled = interrupts_off();
+	t_clean_dead_threads();
+
 	THREADS[t_running]->state = DEAD;
 	q_remove(ready_q, t_running);
+
+	// store exit code
+	THREAD_EXIT_STATUS[t_running] = exit_code;
+
+	// wake up all threads waiting on this thread
+	if (THREADS[t_running]->wait_q) {
+		while (THREADS[t_running]->wait_q->size) {
+			Tid tid = q_pop(THREADS[t_running]->wait_q);
+			q_add(ready_q, tid);
+			// thread_awaken(tid);
+		}
+	}
+
 	if (ready_q->size == 0) {
 		exit(exit_code);
 	}
+
+	// reenable interrupts before yielding
+	interrupts_set(signals_enabled);
 	thread_yield(THREAD_ANY);
 }
 
 Tid
 thread_kill(Tid tid)
 {
+	int signals_enabled = interrupts_off();
+
 	t_clean_dead_threads();
 	if (t_invalid(tid) || tid == t_running) {
+		interrupts_set(signals_enabled);
 		return THREAD_INVALID;
 	}
-	THREADS[tid]->state = DEAD;
+
+	if (THREADS[tid]->state == SLEEPING) thread_awaken(tid);
+	THREADS[tid]->state = KILLED;
 
 	// set thread to run thread_exit with code 9
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RIP] = (greg_t) &thread_exit;
 	THREADS[tid]->context.uc_mcontext.gregs[REG_RDI] = (greg_t) 9;
 
-
+	interrupts_set(signals_enabled);
 	return tid;
 }
 
@@ -346,28 +393,55 @@ thread_kill(Tid tid)
 struct wait_queue *
 wait_queue_create()
 {
+	int signals_enabled = interrupts_off();
 	struct wait_queue *wq;
 
 	wq = malloc(sizeof(struct wait_queue));
 	assert(wq);
 
-	TBD();
+	wq->head = wq->tail = wq->size = 0;
+	for (int i = 0; i < THREAD_MAX_THREADS; i++) {
+		wq->array[i] = THREAD_NONE;
+	}
 
+	interrupts_set(signals_enabled);
 	return wq;
 }
 
 void
 wait_queue_destroy(struct wait_queue *wq)
 {
-	TBD();
-	free(wq);
+	int signals_enabled = interrupts_off();
+	if (wq) {
+		assert(wq->size == 0);
+		free(wq);
+	}
+
+	interrupts_set(signals_enabled);
 }
 
 Tid
 thread_sleep(struct wait_queue *queue)
 {
-	TBD();
-	return THREAD_FAILED;
+	int signals_enabled = interrupts_off();
+
+	// check validitiy of wait queue
+	if(queue == NULL) {
+		interrupts_set(signals_enabled);
+		return THREAD_INVALID;
+	}
+	if (ready_q->size == 0) {
+		interrupts_set(signals_enabled);
+		return THREAD_NONE;
+	}
+	
+	THREADS[thread_id()]->state = SLEEPING;
+	THREADS[thread_id()]->cur_q = queue;
+	q_add(queue, thread_id());
+
+	// yield will return THREAD_NONE if there are no threads in the ready queue
+	interrupts_set(signals_enabled);
+	return thread_yield(THREAD_ANY);
 }
 
 /* when the 'all' parameter is 1, wakeup all threads waiting in the queue.
@@ -375,111 +449,212 @@ thread_sleep(struct wait_queue *queue)
 int
 thread_wakeup(struct wait_queue *queue, int all)
 {
-	TBD();
-	return 0;
+	int signals_enabled = interrupts_off();
+	if (queue == NULL || queue->size == 0) {
+		interrupts_set(signals_enabled);
+		return 0;
+	}
+
+	int t_count;
+
+	if (all) {
+		t_count = all = queue->size;
+	} else {
+		t_count = all = 1;
+	}
+
+	while(all) {
+		Tid tid = q_pop(queue);
+		THREADS[tid]->state = READY;
+		q_add(ready_q, tid);
+		all--;
+	}
+
+	interrupts_set(signals_enabled);
+	return t_count;
 }
 
 /* suspend current thread until Thread tid exits */
 Tid
 thread_wait(Tid tid, int *exit_code)
 {
-	TBD();
-	return 0;
+	int signals_enabled = interrupts_off();
+
+	if (tid < 0 || tid >= THREAD_MAX_THREADS || THREADS[tid] == NULL || tid == t_running) {
+		interrupts_set(signals_enabled);
+		return THREAD_INVALID;
+	}
+
+	Tid ret;
+
+	if (THREADS[tid]->wait_q == NULL) {
+		THREADS[tid]->wait_q = wait_queue_create();
+		ret = tid;
+	} else {
+		ret = THREAD_INVALID;
+	}
+
+	thread_sleep(THREADS[tid]->wait_q);
+
+	if (ret != THREAD_INVALID && exit_code != NULL) {
+		*exit_code = THREAD_EXIT_STATUS[tid];
+		THREAD_EXIT_STATUS[tid] = THREAD_INVALID;
+	}
+
+	interrupts_set(signals_enabled);
+	return ret;
+}
+
+void
+thread_awaken(Tid tid) {
+	int signals_enabled = interrupts_off();
+
+	if (t_invalid(tid) || THREADS[tid]->state != SLEEPING) {
+		interrupts_set(signals_enabled);
+		return;
+	}
+
+	THREADS[tid]->state = READY;
+	q_remove(THREADS[tid]->cur_q, tid);
+	q_add(ready_q, tid);
+
+	interrupts_set(signals_enabled);
 }
 
 struct lock {
 	/* ... Fill this in ... */
+	Tid owner;
+	Queue *queue;
 };
 
 struct lock *
 lock_create()
 {
+	int signals_enabled = interrupts_off();
 	struct lock *lock;
 
 	lock = malloc(sizeof(struct lock));
 	assert(lock);
 
-	TBD();
+	lock->owner = THREAD_NONE;
+	lock->queue = wait_queue_create();
 
+	interrupts_set(signals_enabled);
 	return lock;
 }
 
 void
 lock_destroy(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == THREAD_NONE);
+	assert(lock->queue->size == 0);
 
+	wait_queue_destroy(lock->queue);
 	free(lock);
+	interrupts_set(signals_enabled);
 }
 
 void
 lock_acquire(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
+	assert(lock->owner != thread_id());
 
-	TBD();
+	while (lock->owner != THREAD_NONE) {
+		thread_sleep(lock->queue);
+	}
+	 
+	lock->owner = thread_id();
+
+	interrupts_set(signals_enabled);
+	return;
 }
 
 void
 lock_release(struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(lock != NULL);
+	assert(lock->owner == thread_id());
 
-	TBD();
+	if (lock->owner == thread_id()) {
+		lock->owner = THREAD_NONE;
+		thread_wakeup(lock->queue, 1);
+	}
+
+	interrupts_set(signals_enabled);
 }
 
 struct cv {
 	/* ... Fill this in ... */
+	Queue *queue;
 };
 
 struct cv *
 cv_create()
 {
+	int signals_enabled = interrupts_off();
 	struct cv *cv;
 
 	cv = malloc(sizeof(struct cv));
 	assert(cv);
 
-	TBD();
+	cv->queue = wait_queue_create();
 
+	interrupts_set(signals_enabled);
 	return cv;
 }
 
 void
 cv_destroy(struct cv *cv)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
+	assert(cv->queue->size == 0);
 
-	TBD();
-
+	wait_queue_destroy(cv->queue);
 	free(cv);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_wait(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	lock_release(lock);
+	thread_sleep(cv->queue);
+	lock_acquire(lock);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_signal(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	thread_wakeup(cv->queue, 0);
+	interrupts_set(signals_enabled);
 }
 
 void
 cv_broadcast(struct cv *cv, struct lock *lock)
 {
+	int signals_enabled = interrupts_off();
 	assert(cv != NULL);
 	assert(lock != NULL);
 
-	TBD();
+	assert(lock->owner == thread_id());
+	thread_wakeup(cv->queue, 1);
+	interrupts_set(signals_enabled);
 }
