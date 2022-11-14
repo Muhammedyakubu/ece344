@@ -12,7 +12,7 @@
         // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
         "program": "/homes/y/yakubumu/ece344/pipe/build/pipe",
         // "program": "${fileDirname}/test_basic",
-        "args": ["ls", "cat"],
+        "args": ["uname", "cat"],
         "stopAtEntry": true,
         "cwd": "${workspaceFolder}",
         "environment": [],

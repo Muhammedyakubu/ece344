@@ -5,13 +5,22 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static void check_error(int ret, const char *msg) {
-  if (ret == -1) {
-	int err = errno;
-	perror(msg);
-	exit(err);
-  }
-}
+#define check_error(expr, userMsg) \
+	do { \
+		if (expr == -1) { \
+			perror(userMsg); \
+			fprintf(stderr, "%s:%d\n", __FILE__, __LINE__); \
+			exit(errno); \
+		} \
+	} while (0)
+
+// static void check_error(int ret, const char *msg) {
+//   if (ret == -1) {
+// 	int err = errno;
+// 	perror(msg);
+// 	exit(err);
+//   }
+// }
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -58,12 +67,18 @@ int main(int argc, char *argv[]) {
 			check_error(dup2(stdout_, STDOUT_FILENO), "dup2");
 
 			// should close other dangling fds in the child
-			for (int j = 0; j < num_pipes; j++) {
-				if (pipes[j][0] != stdin_)
-					check_error(close(pipes[j][0]), "close");
-				if (pipes[j][1] != stdout_)
-					check_error(close(pipes[j][1]), "close");
+			for (int j = i-1; j < num_pipes; j++) {
+				check_error(close(pipes[j][0]), "close");
+				check_error(close(pipes[j][1]), "close");
 			}
+			check_error(close(root_stdin), "close");
+			check_error(close(root_stdout), "close");
+			// for (int j = 0; j < num_pipes; j++) {
+			// 	if (pipes[j][0] != stdin_)
+			// 		check_error(close(pipes[j][0]), "close");
+			// 	if (pipes[j][1] != stdout_)
+			// 		check_error(close(pipes[j][1]), "close");
+			// }
 
 			// exec proc
 			// fprintf(stderr, "exec %s\n", argv[i]);
@@ -73,14 +88,27 @@ int main(int argc, char *argv[]) {
 		}
 
 		// parent (proc)
+		// close previous proc's stdout
+		if (i > 1) {
+			check_error(close(pipes[i-2][0]), "close");
+		}
+
+		// close next proc's stdin
+		if (i < argc - 1) {
+			check_error(close(pipes[i-1][1]), "close");
+		}
 
 	}
+
+	// close root's stdin and stdout
+	check_error(close(root_stdin), "close");
+	check_error(close(root_stdout), "close");
 
 	// wait for all children to finish
 	int status;
 	for (int i = 1; i < argc; ++i) {
 		check_error(wait(&status), "wait");
-		assert(WIFEXITED(status));
+		// assert(WIFEXITED(status));
 		if (WEXITSTATUS(status) != 0) {
 			exit(WEXITSTATUS(status));
 		}
