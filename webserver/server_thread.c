@@ -47,6 +47,7 @@ typedef struct Queue {
 /* Some function declarations */
 static void file_data_free(struct file_data *data);
 int cache_evict(Cache *c, Queue *q, int num_bytes);
+void q_insert_sorted(Queue *q, char *file_name, int file_size);
 
 int hash_func(const char *word, int size) {
 	unsigned long hash = 5381;
@@ -94,7 +95,9 @@ copy_file_data(struct file_data *data)
 
 /* Searches the hashtable for file_data of file_name, and returns a copy */
 struct file_data *cache_lookup(Cache *c, char *file_name) {
+
 	pthread_mutex_lock(&c->mutex);
+
 	// if the word is empty, ignore
 	if(strlen(file_name) == 0) return NULL;
 
@@ -133,6 +136,9 @@ void cache_insert(Cache *c, Queue *q, struct file_data *file){
 	// insert entry at the head of wc[k]
 	c->array[k] = entry;
 	c->current_cache_size += file->file_size;
+
+	// add to LFF queue
+	q_insert_sorted(q, file->file_name, file->file_size);
 
 	pthread_mutex_unlock(&c->mutex);
 }
@@ -327,13 +333,24 @@ do_server_request(struct server *sv, int connfd)
 		file_data_free(data);
 		return;
 	}
-	/* read file, 
-	 * fills data->file_buf with the file contents,
-	 * data->file_size with file size. */
-	ret = request_readfile(rq);
-	if (ret == 0) { /* couldn't read file */
-		goto out;
+
+	/* attempt to retrieve the file from cache 
+	 * if attempt fails, proceed as usual. */
+	struct file_data *cachedEntry = cache_lookup(&FileCache, data->file_name);
+	if (cachedEntry) {
+		request_set_data(rq, cachedEntry);
+	} else {
+		/* read file, 
+		 * fills data->file_buf with the file contents,
+		 * data->file_size with file size. */
+		ret = request_readfile(rq);
+		if (ret == 0) { /* couldn't read file */
+			goto out;
+		}
+		// data still points to the same memory location as rq->data
+		cache_insert(&FileCache, &LFFQueue, data);
 	}
+
 	/* send file to client */
 	request_sendfile(rq);
 out:
