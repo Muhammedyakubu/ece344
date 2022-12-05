@@ -71,6 +71,7 @@ cache_init(Cache *c, int max_cache_size)
 {	
 	// initialize hash table
 	int ht_size = max_cache_size/(4096 * 3);
+	printf("ht_size: %d\n", ht_size);
 	c->array_size = ht_size;
 	c->max_cache_size = max_cache_size;
 	c->current_cache_size = 0;
@@ -336,7 +337,9 @@ do_server_request(struct server *sv, int connfd)
 
 	/* attempt to retrieve the file from cache 
 	 * if attempt fails, proceed as usual. */
-	struct file_data *cachedEntry = cache_lookup(&FileCache, data->file_name);
+	struct file_data *cachedEntry = (FileCache.array_size > 0) ? 
+									cachedEntry = cache_lookup(&FileCache, data->file_name) : 
+									NULL;
 	if (cachedEntry) {
 		request_set_data(rq, cachedEntry);
 	} else {

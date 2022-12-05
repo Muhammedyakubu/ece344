@@ -10,9 +10,29 @@
         "type": "cppdbg",
         "request": "launch",
         // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-        "program": "/homes/y/yakubumu/ece344/pipe/build/pipe",
+        "program": "/homes/y/yakubumu/ece344/webserver/server",
+        "args": ["5003", "0", "16", "262144"],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
+    },
+    {
+        "name": "(gdb) Tester",
+        "type": "cppdbg",
+        "request": "launch",
+        // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+        "program": "/cad2/ece344f/tester/bin/ece344-tester",
         // "program": "${fileDirname}/test_basic",
-        "args": ["uname", "cat"],
+        "args": ["5"],
         "stopAtEntry": true,
         "cwd": "${workspaceFolder}",
         "environment": [],
