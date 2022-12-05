@@ -225,6 +225,17 @@ q_add(Queue *q, char *file_name) {
 	q->size++;
 }
 
+void
+q_destroy(Queue *q) {
+	Node *curr = q->head;
+	Node *next = NULL;
+	while(curr) {
+		next = curr->next;
+		free(curr->file_name);
+		free(curr);
+		curr = next;
+	}
+}
 /* Globals */
 
 Cache FileCache;
@@ -392,6 +403,10 @@ server_exit(struct server *sv)
 	for (i = 0; i < sv->nr_threads; i++) {
 		pthread_join(sv->threads[i], NULL);
 	}
+
+	/* Lab 5: free server cache */
+	cache_destroy(&FileCache);
+	q_destroy(&LRUQueue);
 
 	/* make sure to free any allocated resources */
 	free(sv->conn_buf);
