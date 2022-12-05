@@ -1,17 +1,17 @@
-Mon 05 Dec 2022 12:09:14 PM EST
+Mon 05 Dec 2022 12:30:16 PM EST
 Running cachesize experiment. Output goes to plot-cachesize.out
 free(): invalid pointer
-./run-one-experiment: line 70: 1393148 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401374 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393245 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401467 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393337 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401561 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393429 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401651 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393515 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401745 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393607 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401834 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 free(): invalid pointer
-./run-one-experiment: line 70: 1393693 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+./run-one-experiment: line 70: 1401928 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
 Cachesize experiment done.

@@ -125,8 +125,13 @@ void cache_insert(Cache *c, Queue *q, struct file_data *file){
 
 	// and evict if necessary
 	if (c->current_cache_size + file->file_size > c->max_cache_size) {
-		assert(cache_evict(c, q, file->file_size) >= 0);
+		assert(cache_evict(c, q, file->file_size) >= file->file_size);
 	}
+
+	// make sure we're not inserting into a full cache
+	assert(c->current_cache_size + file->file_size <= c->max_cache_size);
+	// if (c->current_cache_size + file->file_size >= c->max_cache_size)
+	// 	printf("Cache is full!\n");
 
 	// get the linked list at index k of the hash table
 	int k = hash_func(file->file_name, c->array_size);
