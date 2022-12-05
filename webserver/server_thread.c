@@ -338,6 +338,8 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 	sv->request_tail = 0;
 
 	/* Lab 5: init server cache and limit its size to max_cache_size */
+	cache_init(&FileCache, max_cache_size);
+	q_init(&LRUQueue);
 
 	/* Lab 4: create worker threads when nr_threads > 0 */
 	pthread_mutex_init(&sv->mutex, NULL);
