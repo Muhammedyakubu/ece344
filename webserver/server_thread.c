@@ -30,6 +30,7 @@ typedef struct Cache {
 	CacheNode **array; // array of CacheNodes
 	int array_size;	// initialized to max_cache_size/average_file_size (12kB)
 	int max_cache_size;
+	int current_cache_size;
 	// should probably add a mutex lock here too?
 } Cache;
 
@@ -43,8 +44,6 @@ typedef struct Queue {
 	struct Node *tail;
 	int size;
 } Queue;
-
-Cache LRUCache;
 
 int hash_func(const char *word, int size) {
 	unsigned long hash = 5381;
@@ -69,6 +68,8 @@ cache_init(Cache *c, int max_cache_size)
 	// initialize hash table
 	int ht_size = max_cache_size/(4096 * 3);
 	c->array_size = ht_size;
+	c->max_cache_size = max_cache_size;
+	c->current_cache_size = 0;
 	c->array = (CacheNode **)calloc(ht_size, sizeof(CacheNode *));
 	assert(c);
 	return;
@@ -97,15 +98,42 @@ void cache_insert(Cache *c, struct file_data *file){
 
 	// insert entry at the head of wc[k]
 	c->array[k] = entry;
+	c->current_cache_size += file->file_size;
 }
 
 // returns the number of bytes evicted from the cache
-int cache_evict(Cache *c, int num_bytes){
+int cache_evict(Cache *c, Queue *q, int num_bytes){
 	if (c->max_cache_size < num_bytes) return 0;
 	int evicted = 0;
 
+	// evict from the head of the LRU queue
+	while (evicted < num_bytes) {
+		// get the file name at the head of the queue
+		Node *node = q->head;
+		q->head = q->head->next;
+		q->size--;
+		if (q->size == 0) q->tail = NULL;
 
-
+		// remove from the cache
+		int k = hash_func(node->file_name, c->array_size);
+		CacheNode *curr = c->array[k];
+		CacheNode *prev = NULL;
+		while (curr) {
+			if (strcmp(node->file_name, curr->data->file_name) == 0) {
+				if (prev) prev->next = curr->next;
+				else c->array[k] = curr->next;
+				evicted += curr->data->file_size;
+				c->current_cache_size -= curr->data->file_size;
+				assert(c->current_cache_size >= 0);
+				assert(evicted <= c->max_cache_size);
+				free(curr);
+				break;
+			}
+			prev = curr;
+			curr = curr->next;
+		}
+		free(node);
+	}
 
 	return evicted;
 }
@@ -140,7 +168,16 @@ cache_destroy(Cache *c)
 /* LRU Implementation */
 /* Use a FIFO Queue (linked list) to keep track of the order of the files */
 
-void q_remove(Queue *q, char *file_name) {
+void 
+q_init(Queue *q) {
+	q->head = NULL;
+	q->tail = NULL;
+	q->size = 0;
+}
+
+/* search & delete file_name from queue */
+void 
+q_remove(Queue *q, char *file_name) {
 	Node *prev = NULL;
 	Node *curr = q->head;
 	while(curr) {
@@ -162,7 +199,9 @@ void q_remove(Queue *q, char *file_name) {
 	}
 }
 
-void q_add(Queue *q, char *file_name) {
+/* add to the tail of the queue */
+void 
+q_add(Queue *q, char *file_name) {
 	Node *new_node = malloc(sizeof(Node));
 	new_node->file_name = malloc(strlen(file_name) + 1);
 	strcpy(new_node->file_name, file_name);
@@ -177,7 +216,8 @@ void q_add(Queue *q, char *file_name) {
 	q->size++;
 }
 
-char *q_remove_head(Queue *q) {
+char *
+q_remove_head(Queue *q) {
 	if(q->head == NULL) return NULL;
 	Node *head = q->head;
 	q->head = head->next;
@@ -187,6 +227,11 @@ char *q_remove_head(Queue *q) {
 	q->size--;
 	return file_name;
 }
+
+/* Globals */
+
+Cache FileCache;
+Queue LRUQueue;
 
 /* static functions */
 
