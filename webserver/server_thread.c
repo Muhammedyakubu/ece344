@@ -31,6 +31,7 @@ typedef struct Cache {
 	int array_size;	// initialized to max_cache_size/average_file_size (12kB)
 	int max_cache_size;
 	int current_cache_size;
+	pthread_mutex_t mutex;
 	// should probably add a mutex lock here too?
 } Cache;
 
@@ -71,11 +72,13 @@ cache_init(Cache *c, int max_cache_size)
 	c->max_cache_size = max_cache_size;
 	c->current_cache_size = 0;
 	c->array = (CacheNode **)calloc(ht_size, sizeof(CacheNode *));
+	pthread_mutex_init(&c->mutex, NULL);
 	assert(c);
 	return;
 }
 
 struct file_data *cache_lookup(Cache *c, char *file_name) {
+	pthread_mutex_lock(&c->mutex);
 	// if the word is empty, ignore
 	if(strlen(file_name) == 0) return NULL;
 
@@ -83,10 +86,13 @@ struct file_data *cache_lookup(Cache *c, char *file_name) {
 	// get the linked list at index k of the hash table
 	CacheNode *head = c->array[k];
 	CacheNode *element = linear_search(head, file_name);
+
+	pthread_mutex_unlock(&c->mutex);
 	return (element) ? element->data : NULL;
 }
 
 void cache_insert(Cache *c, struct file_data *file){
+	pthread_mutex_lock(&c->mutex);
 	// get the linked list at index k of the hash table
 	int k = hash_func(file->file_name, c->array_size);
 	CacheNode *head = c->array[k];
@@ -99,10 +105,12 @@ void cache_insert(Cache *c, struct file_data *file){
 	// insert entry at the head of wc[k]
 	c->array[k] = entry;
 	c->current_cache_size += file->file_size;
+	pthread_mutex_unlock(&c->mutex);
 }
 
 // returns the number of bytes evicted from the cache
 int cache_evict(Cache *c, Queue *q, int num_bytes){
+	pthread_mutex_lock(&c->mutex);
 	if (c->max_cache_size < num_bytes) return 0;
 	int evicted = 0;
 
@@ -132,9 +140,10 @@ int cache_evict(Cache *c, Queue *q, int num_bytes){
 			prev = curr;
 			curr = curr->next;
 		}
+		free(node->file_name);
 		free(node);
 	}
-
+	pthread_mutex_unlock(&c->mutex);
 	return evicted;
 }
 
@@ -214,18 +223,6 @@ q_add(Queue *q, char *file_name) {
 		q->tail = new_node;
 	}
 	q->size++;
-}
-
-char *
-q_remove_head(Queue *q) {
-	if(q->head == NULL) return NULL;
-	Node *head = q->head;
-	q->head = head->next;
-	if(q->head == NULL) q->tail = NULL;
-	char *file_name = head->file_name;
-	free(head);
-	q->size--;
-	return file_name;
 }
 
 /* Globals */
