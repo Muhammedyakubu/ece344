@@ -131,7 +131,7 @@ void cache_insert(Cache *c, Queue *q, struct file_data *file){
 
 	// initialize the new node
 	CacheNode *entry = malloc(sizeof(CacheNode));
-	entry->data = file;
+	entry->data = copy_file_data(file);
 	entry->next = head;
 
 	// insert entry at the head of wc[k]
