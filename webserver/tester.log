@@ -1,0 +1,17 @@
+Mon 05 Dec 2022 12:09:14 PM EST
+Running cachesize experiment. Output goes to plot-cachesize.out
+free(): invalid pointer
+./run-one-experiment: line 70: 1393148 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393245 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393337 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393429 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393515 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393607 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+free(): invalid pointer
+./run-one-experiment: line 70: 1393693 Aborted                 ./server $PORT $NR_THREADS $MAX_REQUESTS $CACHE_SIZE > server.log
+Cachesize experiment done.

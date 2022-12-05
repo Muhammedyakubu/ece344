@@ -1,0 +1,15 @@
+1; $ ece344-tester 5
+Running tests for Lab 5
+Output being sent to tester.log, tester.out
+Running: /cad2/ece344f/tester/scripts/lab5-01-webserver.py 
+webserver test
+starting server at port 34326
+plot-cachesize.out: run times with different cache sizes are only 0.019800000000000012 seconds apart, which is too small.
+Mark for webserver test is 0 out of 14
+FAIL
+
+You have received 0 marks out of a total of 14 marks.
+2; $ ece344-tester 5
+Running tests for Lab 5
+Output being sent to tester.log, tester.out
+Running: /cad2/ece344f/tester/scripts/lab5-01-webserver.py 
