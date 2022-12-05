@@ -1,81 +1,21 @@
 Failed to add the host to the list of known hosts (/homes/y/yakubumu/.ssh/known_hosts.d/ug250.eecg.utoronto.ca).
-Running: /cad2/ece344f/tester/scripts/lab4-01-pipe.py 
--- The C compiler identification is GNU 10.2.1
--- The CXX compiler identification is GNU 10.2.1
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Check for working C compiler: /usr/bin/cc - skipped
--- Detecting C compile features
--- Detecting C compile features - done
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: /usr/bin/c++ - skipped
--- Detecting CXX compile features
--- Detecting CXX compile features - done
--- Found Python3: /usr/bin/python3.9 (found version "3.9.2") found components: Interpreter 
--- Configuring done
--- Generating done
--- Build files have been written to: /nfs/ug/homes-0/y/yakubumu/ece344/marker/os-244/pipe/build
-Scanning dependencies of target pipe
-[ 50%] Building C object CMakeFiles/pipe.dir/pipe.c.o
-[100%] Linking C executable pipe
-[100%] Built target pipe
-Running tests...
-Test project /nfs/ug/homes-0/y/yakubumu/ece344/marker/os-244/pipe/build
-      Start  1: EmptyTest
- 1/25 Test  #1: EmptyTest ........................   Passed    0.02 sec
-      Start  2: ExitFalseTest
- 2/25 Test  #2: ExitFalseTest ....................   Passed    0.02 sec
-      Start  3: ExitInvalidTest
- 3/25 Test  #3: ExitInvalidTest ..................   Passed    0.02 sec
-      Start  4: ExitFalseInvalidTest
- 4/25 Test  #4: ExitFalseInvalidTest .............   Passed    0.02 sec
-      Start  5: ExitInvalidFalseTest
- 5/25 Test  #5: ExitInvalidFalseTest .............   Passed    0.02 sec
-      Start  6: ChildrenOneTest
- 6/25 Test  #6: ChildrenOneTest ..................   Passed    0.02 sec
-      Start  7: ChildrenTwoTest
- 7/25 Test  #7: ChildrenTwoTest ..................   Passed    0.02 sec
-      Start  8: ChildrenThreeTest
- 8/25 Test  #8: ChildrenThreeTest ................   Passed    0.02 sec
-      Start  9: ChildrenFourTest
- 9/25 Test  #9: ChildrenFourTest .................   Passed    0.02 sec
-      Start 10: ChildrenFiveTest
-10/25 Test #10: ChildrenFiveTest .................   Passed    0.02 sec
-      Start 11: ChildrenSixTest
-11/25 Test #11: ChildrenSixTest ..................   Passed    0.02 sec
-      Start 12: ChildrenSevenTest
-12/25 Test #12: ChildrenSevenTest ................   Passed    0.02 sec
-      Start 13: ChildrenEightTest
-13/25 Test #13: ChildrenEightTest ................   Passed    0.02 sec
-      Start 14: ChildrenNineTest
-14/25 Test #14: ChildrenNineTest .................   Passed    0.02 sec
-      Start 15: ChildrenTenTest
-15/25 Test #15: ChildrenTenTest ..................   Passed    0.02 sec
-      Start 16: PipeOneTest
-16/25 Test #16: PipeOneTest ......................   Passed    0.02 sec
-      Start 17: PipeTwoTest
-17/25 Test #17: PipeTwoTest ......................   Passed    0.02 sec
-      Start 18: PipeThreeTest
-18/25 Test #18: PipeThreeTest ....................   Passed    0.02 sec
-      Start 19: PipeFourTest
-19/25 Test #19: PipeFourTest .....................   Passed    0.02 sec
-      Start 20: PipeFiveTest
-20/25 Test #20: PipeFiveTest .....................   Passed    0.02 sec
-      Start 21: PipeSixTest
-21/25 Test #21: PipeSixTest ......................   Passed    0.02 sec
-      Start 22: PipeSevenTest
-22/25 Test #22: PipeSevenTest ....................   Passed    0.02 sec
-      Start 23: PipeEightTest
-23/25 Test #23: PipeEightTest ....................   Passed    0.03 sec
-      Start 24: PipeNineTest
-24/25 Test #24: PipeNineTest .....................   Passed    0.03 sec
-      Start 25: StdinTest
-25/25 Test #25: StdinTest ........................   Passed    0.12 sec
+cc -MM *.c > .depend
+cc -g -Wall -Werror   -c -o server.o server.c
+cc -g -Wall -Werror   -c -o server_thread.o server_thread.c
+cc -g -Wall -Werror   -c -o request.o request.c
+cc -g -Wall -Werror   -c -o common.o common.c
+cc   server.o server_thread.o request.o common.o -lm -lpthread -lpopt  -o server
+cc -g -Wall -Werror   -c -o client_simple.o client_simple.c
+cc   client_simple.o common.o -lm -lpthread -lpopt  -o client_simple
+cc -g -Wall -Werror   -c -o client.o client.c
+cc   client.o common.o -lm -lpthread -lpopt  -o client
+cc -g -Wall -Werror   -c -o fileset.o fileset.c
+cc   fileset.o common.o -lm -lpthread -lpopt  -o fileset
+Running: /cad2/ece344f/tester/scripts/lab5-01-webserver.py 
+webserver test
+starting server at port 18494
+plot-cachesize.out: run time with   262144 cache size is  0.12. We expect it to lie in between  0.12 and  0.14.
+Mark for webserver test is 12 out of 14
+FAIL
 
-100% tests passed, 0 tests failed out of 25
-
-Total Test time (real) =   0.72 sec
-
-You have received 100 marks out of a total of 100 marks.
-tester.log not found
+You have received 12 marks out of a total of 14 marks.

@@ -70,10 +70,11 @@ void
 cache_init(Cache *c, int max_cache_size)
 {	
 	// initialize hash table
-	int ht_size = max_cache_size/(4096 * 3);
+	// int ht_size = max_cache_size/(4096 * 3);
+	int ht_size = 1000;
 	printf("ht_size: %d\n", ht_size);
 	c->array_size = ht_size;
-	c->max_cache_size = max_cache_size;
+	c->max_cache_size = 0.9 * max_cache_size;
 	c->current_cache_size = 0;
 	c->array = (CacheNode **)calloc(ht_size, sizeof(CacheNode *));
 	pthread_mutex_init(&c->mutex, NULL);
