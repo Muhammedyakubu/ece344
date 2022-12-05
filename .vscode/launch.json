@@ -26,6 +26,26 @@
         ]
     },
     {
+        "name": "(gdb) Webserver Launch 0kb",
+        "type": "cppdbg",
+        "request": "launch",
+        // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+        "program": "/homes/y/yakubumu/ece344/webserver/server",
+        "args": ["5003", "0", "16", "0"],
+        "stopAtEntry": false,
+        "cwd": "/homes/y/yakubumu/ece344/webserver",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
+    },
+    {
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",

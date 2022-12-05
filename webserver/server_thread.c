@@ -118,7 +118,10 @@ void cache_insert(Cache *c, Queue *q, struct file_data *file){
 	pthread_mutex_lock(&c->mutex);
 
 	// check if there is enough space in the cache
-	if (file->file_size >= c->max_cache_size) return;
+	if (file->file_size >= c->max_cache_size) {
+		pthread_mutex_unlock(&c->mutex);
+		return;
+	}
 
 	// and evict if necessary
 	if (c->current_cache_size + file->file_size > c->max_cache_size) {
