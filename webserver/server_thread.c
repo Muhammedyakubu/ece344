@@ -77,6 +77,20 @@ cache_init(Cache *c, int max_cache_size)
 	return;
 }
 
+struct file_data *
+copy_file_data(struct file_data *data)
+{
+	struct file_data *new_data;
+	new_data = (struct file_data *)malloc(sizeof(struct file_data));
+	new_data->file_name = (char *)malloc(strlen(data->file_name) + 1);
+	strcpy(new_data->file_name, data->file_name);
+	new_data->file_buf = (char *)malloc(data->file_size);
+	memcpy(new_data->file_buf, data->file_buf, data->file_size);
+	new_data->file_size = data->file_size;
+	return new_data;
+}
+
+/* Searches the hashtable for file_data of file_name, and returns a copy */
 struct file_data *cache_lookup(Cache *c, char *file_name) {
 	pthread_mutex_lock(&c->mutex);
 	// if the word is empty, ignore
@@ -88,9 +102,11 @@ struct file_data *cache_lookup(Cache *c, char *file_name) {
 	CacheNode *element = linear_search(head, file_name);
 
 	pthread_mutex_unlock(&c->mutex);
-	return (element) ? element->data : NULL;
+	return (element) ? copy_file_data(element->data) : NULL;
 }
 
+/* Handles logic for file eviction as well. 
+	This is the only place cache_evict is called */
 void cache_insert(Cache *c, struct file_data *file){
 	pthread_mutex_lock(&c->mutex);
 	// get the linked list at index k of the hash table
