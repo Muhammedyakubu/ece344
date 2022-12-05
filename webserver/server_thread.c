@@ -17,9 +17,6 @@ struct server {
 	pthread_cond_t cons_cond;	
 };
 
-static void
-file_data_free(struct file_data *data);
-
 /* Cache Implementation */
 typedef struct CacheNode {
 	struct file_data *data;
@@ -37,14 +34,19 @@ typedef struct Cache {
 
 typedef struct Node {
 	char *file_name;	// could use static array instead
+	int file_size;
 	struct Node *next;
 } Node;
 
 typedef struct Queue {
 	struct Node *head;
-	struct Node *tail;
+	struct Node *tail;	// this is probably unnecessary Largest File First Implementation
 	int size;
 } Queue;
+
+/* Some function declarations */
+static void file_data_free(struct file_data *data);
+int cache_evict(Cache *c, Queue *q, int num_bytes);
 
 int hash_func(const char *word, int size) {
 	unsigned long hash = 5381;
@@ -107,14 +109,16 @@ struct file_data *cache_lookup(Cache *c, char *file_name) {
 
 /* Handles logic for file eviction as well. 
 	This is the only place cache_evict is called */
-void cache_insert(Cache *c, struct file_data *file){
+void cache_insert(Cache *c, Queue *q, struct file_data *file){
+
 	pthread_mutex_lock(&c->mutex);
+
 	// check if there is enough space in the cache
 	if (file->file_size >= c->max_cache_size) return;
 
 	// and evict if necessary
 	if (c->current_cache_size + file->file_size > c->max_cache_size) {
-		assert(cache_evict(c, file->file_size) >= 0);
+		assert(cache_evict(c, q, file->file_size) >= 0);
 	}
 
 	// get the linked list at index k of the hash table
@@ -129,6 +133,7 @@ void cache_insert(Cache *c, struct file_data *file){
 	// insert entry at the head of wc[k]
 	c->array[k] = entry;
 	c->current_cache_size += file->file_size;
+
 	pthread_mutex_unlock(&c->mutex);
 }
 
@@ -137,7 +142,7 @@ int cache_evict(Cache *c, Queue *q, int num_bytes){
 	if (c->max_cache_size < num_bytes) return 0;
 	int evicted = 0;
 
-	// evict from the head of the LRU queue
+	// evict from the head of the LFF queue
 	while (evicted < num_bytes) {
 		// get the file name at the head of the queue
 		Node *node = q->head;
@@ -196,8 +201,8 @@ cache_destroy(Cache *c)
 };
 
 
-/* LRU Implementation */
-/* Use a FIFO Queue (linked list) to keep track of the order of the files */
+/* Largest File First Implementation */
+/* Use a Sorted linked list to keep track of the relative size order of the files */
 
 void 
 q_init(Queue *q) {
@@ -230,21 +235,41 @@ q_remove(Queue *q, char *file_name) {
 	}
 }
 
-/* add to the tail of the queue */
-void 
-q_add(Queue *q, char *file_name) {
+/* insert in decreasing order of file size into the queue */
+/* Prof Eyolfson mentioned that evicting largest files first gives best performance */
+void
+q_insert_sorted(Queue *q, char *file_name, int file_size) {
 	Node *new_node = malloc(sizeof(Node));
 	new_node->file_name = malloc(strlen(file_name) + 1);
 	strcpy(new_node->file_name, file_name);
+	new_node->file_size = file_size;
 	new_node->next = NULL;
+
 	if(q->head == NULL) {
 		q->head = new_node;
 		q->tail = new_node;
 	} else {
+		Node *prev = NULL;
+		Node *curr = q->head;
+		while(curr) {
+			if(curr->file_size < file_size) {
+				if(prev == NULL) {
+					new_node->next = q->head;
+					q->head = new_node;
+				} else {
+					new_node->next = curr;
+					prev->next = new_node;
+				}
+				q->size++;
+				return;
+			}
+			prev = curr;
+			curr = curr->next;
+		}
 		q->tail->next = new_node;
 		q->tail = new_node;
+		q->size++;
 	}
-	q->size++;
 }
 
 void
@@ -261,7 +286,7 @@ q_destroy(Queue *q) {
 /* Globals */
 
 Cache FileCache;
-Queue LRUQueue;
+Queue LFFQueue;
 
 /* static functions */
 
@@ -372,7 +397,7 @@ server_init(int nr_threads, int max_requests, int max_cache_size)
 
 	/* Lab 5: init server cache and limit its size to max_cache_size */
 	cache_init(&FileCache, max_cache_size);
-	q_init(&LRUQueue);
+	q_init(&LFFQueue);
 
 	/* Lab 4: create worker threads when nr_threads > 0 */
 	pthread_mutex_init(&sv->mutex, NULL);
@@ -428,7 +453,7 @@ server_exit(struct server *sv)
 
 	/* Lab 5: free server cache */
 	cache_destroy(&FileCache);
-	q_destroy(&LRUQueue);
+	q_destroy(&LFFQueue);
 
 	/* make sure to free any allocated resources */
 	free(sv->conn_buf);
