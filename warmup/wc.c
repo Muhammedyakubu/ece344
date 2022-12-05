@@ -12,7 +12,6 @@ typedef struct Node {
 } Node;
 
 struct wc {
-	/* you can define this struct to have whatever fields you want. */
 	Node **array; // array of linkedlistNodes
 	int size;
 	

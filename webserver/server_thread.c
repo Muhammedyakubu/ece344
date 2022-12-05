@@ -17,6 +17,177 @@ struct server {
 	pthread_cond_t cons_cond;	
 };
 
+static void
+file_data_free(struct file_data *data);
+
+/* Cache Implementation */
+typedef struct CacheNode {
+	struct file_data *data;
+	struct CacheNode *next;
+} CacheNode;
+
+typedef struct Cache {
+	CacheNode **array; // array of CacheNodes
+	int array_size;	// initialized to max_cache_size/average_file_size (12kB)
+	int max_cache_size;
+	// should probably add a mutex lock here too?
+} Cache;
+
+typedef struct Node {
+	char *file_name;	// could use static array instead
+	struct Node *next;
+} Node;
+
+typedef struct Queue {
+	struct Node *head;
+	struct Node *tail;
+	int size;
+} Queue;
+
+Cache LRUCache;
+
+int hash_func(const char *word, int size) {
+	unsigned long hash = 5381;
+	int c;
+	while ((c = *word++))
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	return hash % size;
+}
+
+CacheNode *linear_search(CacheNode *head, char *word){
+	while (head) {
+		if (strcmp(word, head->data->file_name) == 0)
+			return head;
+		head = head->next;
+	}
+	return NULL;
+}
+
+void
+cache_init(Cache *c, int max_cache_size)
+{	
+	// initialize hash table
+	int ht_size = max_cache_size/(4096 * 3);
+	c->array_size = ht_size;
+	c->array = (CacheNode **)calloc(ht_size, sizeof(CacheNode *));
+	assert(c);
+	return;
+}
+
+struct file_data *cache_lookup(Cache *c, char *file_name) {
+	// if the word is empty, ignore
+	if(strlen(file_name) == 0) return NULL;
+
+	int k = hash_func(file_name, c->array_size);
+	// get the linked list at index k of the hash table
+	CacheNode *head = c->array[k];
+	CacheNode *element = linear_search(head, file_name);
+	return (element) ? element->data : NULL;
+}
+
+void cache_insert(Cache *c, struct file_data *file){
+	// get the linked list at index k of the hash table
+	int k = hash_func(file->file_name, c->array_size);
+	CacheNode *head = c->array[k];
+
+	// initialize the new node
+	CacheNode *entry = malloc(sizeof(CacheNode));
+	entry->data = file;
+	entry->next = head;
+
+	// insert entry at the head of wc[k]
+	c->array[k] = entry;
+}
+
+// returns the number of bytes evicted from the cache
+int cache_evict(Cache *c, int num_bytes){
+	if (c->max_cache_size < num_bytes) return 0;
+	int evicted = 0;
+
+
+
+
+	return evicted;
+}
+
+void
+list_destroy(CacheNode *head) {
+	if(head == NULL) return;
+	if(head->next == NULL) {
+		file_data_free(head->data);
+		free(head);
+		return;
+	}
+	list_destroy(head->next);
+	file_data_free(head->data);
+	free(head);
+	return;
+}
+
+void
+cache_destroy(Cache *c)
+{
+	// loop through the entire array
+	for(int i  = 0; i < c->array_size; ++i) {
+		// free each node
+		list_destroy(c->array[i]);
+	}
+
+	free(c);
+};
+
+
+/* LRU Implementation */
+/* Use a FIFO Queue (linked list) to keep track of the order of the files */
+
+void q_remove(Queue *q, char *file_name) {
+	Node *prev = NULL;
+	Node *curr = q->head;
+	while(curr) {
+		if(strcmp(curr->file_name, file_name) == 0) {
+			if(prev == NULL) {
+				q->head = curr->next;
+				if(q->head == NULL) q->tail = NULL;
+			} else {
+				prev->next = curr->next;
+				if(prev->next == NULL) q->tail = prev;
+			}
+			free(curr->file_name);
+			free(curr);
+			q->size--;
+			return;
+		}
+		prev = curr;
+		curr = curr->next;
+	}
+}
+
+void q_add(Queue *q, char *file_name) {
+	Node *new_node = malloc(sizeof(Node));
+	new_node->file_name = malloc(strlen(file_name) + 1);
+	strcpy(new_node->file_name, file_name);
+	new_node->next = NULL;
+	if(q->head == NULL) {
+		q->head = new_node;
+		q->tail = new_node;
+	} else {
+		q->tail->next = new_node;
+		q->tail = new_node;
+	}
+	q->size++;
+}
+
+char *q_remove_head(Queue *q) {
+	if(q->head == NULL) return NULL;
+	Node *head = q->head;
+	q->head = head->next;
+	if(q->head == NULL) q->tail = NULL;
+	char *file_name = head->file_name;
+	free(head);
+	q->size--;
+	return file_name;
+}
+
 /* static functions */
 
 /* initialize file data */
