@@ -109,6 +109,14 @@ struct file_data *cache_lookup(Cache *c, char *file_name) {
 	This is the only place cache_evict is called */
 void cache_insert(Cache *c, struct file_data *file){
 	pthread_mutex_lock(&c->mutex);
+	// check if there is enough space in the cache
+	if (file->file_size >= c->max_cache_size) return;
+
+	// and evict if necessary
+	if (c->current_cache_size + file->file_size > c->max_cache_size) {
+		assert(cache_evict(c, file->file_size) >= 0);
+	}
+
 	// get the linked list at index k of the hash table
 	int k = hash_func(file->file_name, c->array_size);
 	CacheNode *head = c->array[k];
@@ -126,7 +134,6 @@ void cache_insert(Cache *c, struct file_data *file){
 
 // returns the number of bytes evicted from the cache
 int cache_evict(Cache *c, Queue *q, int num_bytes){
-	pthread_mutex_lock(&c->mutex);
 	if (c->max_cache_size < num_bytes) return 0;
 	int evicted = 0;
 
@@ -159,7 +166,6 @@ int cache_evict(Cache *c, Queue *q, int num_bytes){
 		free(node->file_name);
 		free(node);
 	}
-	pthread_mutex_unlock(&c->mutex);
 	return evicted;
 }
 
